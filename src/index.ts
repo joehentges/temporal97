@@ -9,7 +9,6 @@ import type {
   SnapshotId,
   TemporalGraphOptions,
 } from './temporal.types';
-import { MutationKindEnum, MutationOperationEnum } from './temporal.types';
 import { TemporalGraph } from './temporal-graph';
 import type { Delta } from './utils';
 
@@ -21,8 +20,6 @@ export {
   type LogEntry,
   type Mutation,
   type MutationInput,
-  MutationKindEnum,
-  MutationOperationEnum,
   type Neighbor,
   type SnapshotId,
   TemporalGraph,

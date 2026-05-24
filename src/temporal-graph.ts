@@ -48,7 +48,10 @@ export class TemporalGraph<
     this.options = options;
   }
 
-  // Returns the current live data for a node, or `undefined` if it does not exist at the current snapshot.
+  hasNode(id: EntityId): boolean {
+    return this.nodeState.has(id);
+  }
+
   getNode(id: EntityId): TNode | undefined {
     return this.nodeState.get(id);
   }
@@ -64,9 +67,19 @@ export class TemporalGraph<
     return result;
   }
 
-  // Returns the current live data for an edge, or `undefined` if it does not exist at the current snapshot.
+  hasEdge(id: EntityId): boolean {
+    return this.edgeState.has(id);
+  }
+
   getEdge(id: EntityId): TEdge | undefined {
     return this.edgeState.get(id);
+  }
+
+  // Returns the value of an edge at a specific snapshot, or `undefined` if it did not exist at that snapshot.
+  getEdgeAt(edgeId: EntityId, snapshot: SnapshotId): TEdge | undefined {
+    const indices = this.edgeHistory.get(edgeId);
+    if (!indices) return undefined;
+    return this.getEdgeValueAt(edgeId, indices, snapshot);
   }
 
   // Returns the set of edge IDs connected to `id` (as both source or target) at the current snapshot.
@@ -201,6 +214,16 @@ export class TemporalGraph<
   // The snapshot ID at the current cursor position. Returns `-Infinity` when the graph is at its initial (empty) state.
   get currentSnapshot(): SnapshotId {
     return this.entries[this.cursorIndex - 1]?.snapshot ?? -Infinity;
+  }
+
+  // The number of nodes currently alive at the cursor position.
+  get nodeCount(): number {
+    return this.nodeState.size;
+  }
+
+  // The number of edges currently alive at the cursor position.
+  get edgeCount(): number {
+    return this.edgeState.size;
   }
 
   // Total number of log entries stored across all snapshots, regardless of cursor position.
