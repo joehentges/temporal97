@@ -5,6 +5,7 @@ import {
   type LogEntry,
   MutationKindEnum,
   MutationOperationEnum,
+  type Neighbor,
   type SnapshotId,
   type TemporalGraphOptions,
 } from './temporal.types';
@@ -18,6 +19,7 @@ import {
   indexEntry,
   lowerBoundBySnapshot,
   materializeEntry,
+  resolveNeighbors,
   reverseEntry,
 } from './utils';
 
@@ -46,8 +48,6 @@ export class TemporalGraph<
     this.options = options;
   }
 
-  // ---- Reads ----
-
   // Returns the current live data for a node, or `undefined` if it does not exist at the current snapshot.
   getNode(id: EntityId): TNode | undefined {
     return this.nodeState.get(id);
@@ -72,6 +72,59 @@ export class TemporalGraph<
   // Returns the set of edge IDs connected to `id` (as both source or target) at the current snapshot.
   getEdgesForNode(id: EntityId): ReadonlySet<EntityId> {
     return this.adjacency.get(id) ?? EMPTY_SET;
+  }
+
+  /**
+   * Returns an iterator over every neighbor of `id` at the current snapshot. Each item describes
+   * the neighboring node ID, the connecting edge ID, and the full edge data — giving traversal
+   * algorithms everything they need in a single call without manual edge lookups.
+   *
+   * For directed traversal, filter by `edge.source === id` (outbound) or `edge.target === id` (inbound).
+   */
+  getNeighbors(id: EntityId): IterableIterator<Neighbor<TEdge>> {
+    return resolveNeighbors(this.adjacency, this.edgeState, id);
+  }
+
+  /**
+   * Returns every neighbor of `id` as it existed at `snapshot`. Scans edge history in a single
+   * pass to find edges that were alive and connected to `id` at that point in time, returning
+   * the edge value and resolved neighbor ID for each.
+   *
+   * Use this when running traversal algorithms over a historical state of the graph rather than
+   * the current live state. Pair with {@link getNodeAt} to read node data at the same snapshot.
+   */
+  getNeighborsAt(id: EntityId, snapshot: SnapshotId): ReadonlyArray<Neighbor<TEdge>> {
+    const result: Neighbor<TEdge>[] = [];
+    for (const [edgeId, indices] of this.edgeHistory) {
+      const edge = this.getEdgeValueAt(edgeId, indices, snapshot);
+      if (edge !== undefined && (edge.source === id || edge.target === id)) {
+        result.push({
+          nodeId: edge.source === id ? edge.target : edge.source,
+          edgeId,
+          edge,
+        });
+      }
+    }
+    return result;
+  }
+
+  // Scans an edge's mutation history up to `snapshot` and returns its value at that point, or
+  // `undefined` if it did not exist or had been deleted.
+  private getEdgeValueAt(
+    edgeId: EntityId,
+    indices: number[],
+    snapshot: SnapshotId,
+  ): TEdge | undefined {
+    let result: TEdge | undefined;
+    for (const idx of indices) {
+      const entry = this.entries[idx];
+      if (entry === undefined || entry.snapshot > snapshot) break;
+      for (const mutation of entry.mutations) {
+        if (mutation.kind !== MutationKindEnum.Edge || mutation.id !== edgeId) continue;
+        result = mutation.op === MutationOperationEnum.Set ? mutation.value : undefined;
+      }
+    }
+    return result;
   }
 
   // Helper for getEdgesForNodeAt: checks if edge `edgeId` is alive and connected to `nodeId` at `snapshot` by scanning through the edge's mutation history.
@@ -174,8 +227,6 @@ export class TemporalGraph<
     };
   }
 
-  // ---- Writes ----
-
   /**
    * Appends a single entry at the head of the log, applies its mutations to the live state,
    * and returns a Delta describing what changed.
@@ -243,8 +294,6 @@ export class TemporalGraph<
       preEdgeValues,
     );
   }
-
-  // ---- Scrubbing ----
 
   /**
    * Moves the cursor forward to `targetSnapshot`, applying all entries up to and including that
@@ -320,8 +369,6 @@ export class TemporalGraph<
     }
     return this.rewind(targetSnapshot);
   }
-
-  // ---- Inspector queries ----
 
   // Returns all log entries recorded at exactly `snapshot`, regardless of current cursor position.
   getEntriesBySnapshot(snapshot: SnapshotId): LogEntry<TNode, TEdge, TEvent>[] {

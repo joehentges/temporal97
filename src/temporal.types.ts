@@ -10,6 +10,12 @@ export interface BaseEdgeData {
   target: EntityId;
 }
 
+export interface Neighbor<TEdge extends BaseEdgeData> {
+  nodeId: EntityId;
+  edgeId: EntityId;
+  edge: TEdge;
+}
+
 export enum MutationKindEnum {
   Node = 'node',
   Edge = 'edge',

@@ -5,6 +5,7 @@ import type {
   LogEntry,
   Mutation,
   MutationInput,
+  Neighbor,
   SnapshotId,
   TemporalGraphOptions,
 } from './temporal.types';
@@ -22,6 +23,7 @@ export {
   type MutationInput,
   MutationKindEnum,
   MutationOperationEnum,
+  type Neighbor,
   type SnapshotId,
   TemporalGraph,
   type TemporalGraphOptions,
