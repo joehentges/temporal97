@@ -74,7 +74,43 @@ export class TemporalGraph<
     return this.adjacency.get(id) ?? EMPTY_SET;
   }
 
-  // Returns the set of edge IDs connected to `id` at a specific snapshot.
+  // Helper for getEdgesForNodeAt: checks if edge `edgeId` is alive and connected to `nodeId` at `snapshot` by scanning through the edge's mutation history.
+  private isEdgeAliveAndConnectedAt(
+    edgeId: EntityId,
+    indices: number[],
+    nodeId: EntityId,
+    snapshot: SnapshotId,
+  ): boolean {
+    let alive = false;
+    let connected = false;
+    for (const idx of indices) {
+      const entry = this.entries[idx];
+      if (entry === undefined || entry.snapshot > snapshot) break;
+      for (const mutation of entry.mutations) {
+        if (mutation.kind !== MutationKindEnum.Edge || mutation.id !== edgeId) continue;
+        if (mutation.op === MutationOperationEnum.Set) {
+          alive = true;
+          connected = mutation.value.source === nodeId || mutation.value.target === nodeId;
+        } else {
+          alive = false;
+        }
+      }
+    }
+    return alive && connected;
+  }
+
+  // Returns the set of edge IDs connected to `id` (as both source or target) at a specific snapshot.
+  getEdgesForNodeAt(id: EntityId, snapshot: SnapshotId): ReadonlySet<EntityId> {
+    const result = new Set<EntityId>();
+    for (const [edgeId, indices] of this.edgeHistory) {
+      if (this.isEdgeAliveAndConnectedAt(edgeId, indices, id, snapshot)) {
+        result.add(edgeId);
+      }
+    }
+    return result;
+  }
+
+  // Returns all snapshots in the log, each paired with the entries recorded at that snapshot.
   getSnapshots(): {
     snapshot: SnapshotId;
     entries: LogEntry<TNode, TEdge, TEvent>[];
@@ -93,6 +129,19 @@ export class TemporalGraph<
       result[result.length - 1]?.entries.push(entry);
     }
 
+    return result;
+  }
+
+  // Returns an ordered list of every unique snapshot ID in the log.
+  getSnapshotIds(): SnapshotId[] {
+    const result: SnapshotId[] = [];
+    let current: SnapshotId | undefined;
+    for (const entry of this.entries) {
+      if (entry.snapshot !== current) {
+        current = entry.snapshot;
+        result.push(current);
+      }
+    }
     return result;
   }
 
