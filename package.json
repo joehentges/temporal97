@@ -1,22 +1,22 @@
 {
-  "name": "your-library",
-  "version": "0.0.0",
+  "name": "temporal97",
+  "version": "0.0.1",
   "description": "A TypeScript library",
   "keywords": [],
   "author": {
-    "name": "Joe Hentges",
+    "name": "JoeHentges",
     "email": "joeypeterhentges@gmail.com",
-    "url": "https://github.com/JoeHentges"
+    "url": "https://github.com/joehentges"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/JoeHentges/your-library"
+    "url": "https://github.com/joehentges/temporal97"
   },
   "bugs": {
-    "url": "https://github.com/JoeHentges/your-library/issues"
+    "url": "https://github.com/joehentges/temporal97/issues"
   },
-  "homepage": "https://github.com/JoeHentges/your-library#readme",
+  "homepage": "https://github.com/joehentges/temporal97#readme",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

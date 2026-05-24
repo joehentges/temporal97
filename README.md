@@ -1,25 +1,25 @@
-# your-library
+# temporal97
 
 > A TypeScript library
 
-[![CI](https://github.com/JoeHentges/your-library/actions/workflows/ci.yml/badge.svg)](https://github.com/JoeHentges/your-library/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/your-library.svg)](https://www.npmjs.com/package/your-library)
-[![license](https://img.shields.io/npm/l/your-library.svg)](./LICENSE)
+[![CI](https://github.com/JoeHentges/temporal97/actions/workflows/ci.yml/badge.svg)](https://github.com/JoeHentges/temporal97/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/temporal97.svg)](https://www.npmjs.com/package/temporal97)
+[![license](https://img.shields.io/npm/l/temporal97.svg)](./LICENSE)
 
 ## Installation
 
 ```bash
-npm install your-library
+npm install temporal97
 # or
-pnpm add your-library
+pnpm add temporal97
 # or
-yarn add your-library
+yarn add temporal97
 ```
 
 ## Usage
 
 ```ts
-import { add } from 'your-library';
+import { add } from "temporal97";
 
 const result = add(1, 2);
 // => 3
@@ -49,4 +49,4 @@ Contributions are welcome! Please open an issue or submit a pull request.
 
 ## License
 
-[MIT](./LICENSE) © Joe Hentges
+[MIT](./LICENSE) © JoeHentges
