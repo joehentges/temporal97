@@ -1,13 +1,23 @@
 {
   "name": "temporal97",
-  "version": "0.0.1",
-  "description": "A TypeScript library",
-  "keywords": [],
-  "author": {
-    "name": "JoeHentges",
-    "email": "joeypeterhentges@gmail.com",
-    "url": "https://github.com/joehentges"
-  },
+  "version": "0.1.0",
+  "description": "A TypeScript temporal graph with snapshot-based time travel and mutation history tracking.",
+  "keywords": [
+    "temporal",
+    "graph",
+    "snapshot",
+    "time-travel",
+    "mutations",
+    "history",
+    "typescript",
+    "data-structure"
+  ],
+  "contributors": [
+    {
+      "name": "Joe Hentges",
+      "url": "https://github.com/joehentges"
+    }
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

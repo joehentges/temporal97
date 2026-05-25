@@ -7,11 +7,9 @@ import {
   type MutationInput,
   MutationKindEnum,
   MutationOperationEnum,
+  type Neighbor,
   type SnapshotId,
-  type TemporalGraphOptions,
 } from './temporal.types';
-
-// ---- Delta ----
 
 export interface Delta {
   nodes: {
@@ -79,8 +77,6 @@ export function diffAgainst<TNode, TEdge extends BaseEdgeData>(
   return delta;
 }
 
-// ---- Adjacency ----
-
 /**
  * Registers an edge in the adjacency map for both its source and target nodes.
  * Creates the entry set for a node on first use.
@@ -125,7 +121,58 @@ export function removeAdjacency<TEdge extends BaseEdgeData>(
   }
 }
 
-// ---- Apply / Reverse ----
+/**
+ * Yields a {@link Neighbor} for every edge currently connected to `nodeId` in the live graph.
+ * For each adjacent edge ID found in `adjacency`, looks up the edge data in `edgeState` and
+ * resolves the other endpoint. O(degree) — one Map lookup per adjacent edge.
+ */
+export function* resolveNeighbors<TEdge extends BaseEdgeData>(
+  adjacency: Map<EntityId, Set<EntityId>>,
+  edgeState: Map<EntityId, TEdge>,
+  nodeId: EntityId,
+): Generator<Neighbor<TEdge>> {
+  const edgeIds = adjacency.get(nodeId);
+  if (!edgeIds) return;
+  for (const edgeId of edgeIds) {
+    const edge = edgeState.get(edgeId);
+    if (edge === undefined) continue;
+    yield {
+      nodeId: edge.source === nodeId ? edge.target : edge.source,
+      edgeId,
+      edge,
+    };
+  }
+}
+
+// Yields a Neighbor for every edge whose target is `nodeId` (i.e. edges pointing into this node).
+export function* resolveInNeighbors<TEdge extends BaseEdgeData>(
+  adjacency: Map<EntityId, Set<EntityId>>,
+  edgeState: Map<EntityId, TEdge>,
+  nodeId: EntityId,
+): Generator<Neighbor<TEdge>> {
+  const edgeIds = adjacency.get(nodeId);
+  if (!edgeIds) return;
+  for (const edgeId of edgeIds) {
+    const edge = edgeState.get(edgeId);
+    if (edge === undefined || edge.target !== nodeId) continue;
+    yield { nodeId: edge.source, edgeId, edge };
+  }
+}
+
+// Yields a Neighbor for every edge whose source is `nodeId` (i.e. edges going out from this node).
+export function* resolveOutNeighbors<TEdge extends BaseEdgeData>(
+  adjacency: Map<EntityId, Set<EntityId>>,
+  edgeState: Map<EntityId, TEdge>,
+  nodeId: EntityId,
+): Generator<Neighbor<TEdge>> {
+  const edgeIds = adjacency.get(nodeId);
+  if (!edgeIds) return;
+  for (const edgeId of edgeIds) {
+    const edge = edgeState.get(edgeId);
+    if (edge === undefined || edge.source !== nodeId) continue;
+    yield { nodeId: edge.target, edgeId, edge };
+  }
+}
 
 /**
  * Applies a single Set or Delete mutation to the live node/edge state, updates the adjacency
@@ -278,8 +325,6 @@ export function reverseEntry<TNode, TEdge extends BaseEdgeData, TEvent>(
   }
 }
 
-// ---- Materialization ----
-
 /**
  * Enriches a raw MutationInput with the entity's current value as `prev`, producing a fully
  * reversible Mutation. Throws if a Delete targets an entity that does not exist in the current state.
@@ -352,8 +397,6 @@ export function materializeEntry<TNode, TEdge extends BaseEdgeData, TEvent>(
   };
 }
 
-// ---- Indexing ----
-
 /**
  * Appends `entryIndex` to the history array for `id` in the given index map, creating the
  * array on first use. Keeps mutation history in insertion order.
@@ -379,7 +422,6 @@ export function appendToHistoryIndex(
 export function indexEntry<TNode, TEdge extends BaseEdgeData, TEvent>(
   nodeHistory: Map<EntityId, number[]>,
   edgeHistory: Map<EntityId, number[]>,
-  options: TemporalGraphOptions<TEvent>,
   entry: LogEntry<TNode, TEdge, TEvent>,
   entryIndex: number,
 ): void {
@@ -397,12 +439,6 @@ export function indexEntry<TNode, TEdge extends BaseEdgeData, TEvent>(
     }
   }
 
-  if (entry.event !== undefined && options.eventEntityRefs) {
-    for (const id of options.eventEntityRefs(entry.event)) {
-      touchedNodes.add(id);
-    }
-  }
-
   for (const id of touchedNodes) {
     appendToHistoryIndex(nodeHistory, id, entryIndex);
   }
@@ -410,8 +446,6 @@ export function indexEntry<TNode, TEdge extends BaseEdgeData, TEvent>(
     appendToHistoryIndex(edgeHistory, id, entryIndex);
   }
 }
-
-// ---- Search ----
 
 /**
  * Binary search over a sorted entry array. Returns the index of the first entry whose snapshot
