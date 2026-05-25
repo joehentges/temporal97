@@ -1,10 +1,6 @@
 export type SnapshotId = number;
 export type EntityId = string;
 
-export interface TemporalGraphOptions<TEvent> {
-  eventEntityRefs?: (event: TEvent) => Iterable<EntityId>;
-}
-
 export interface BaseEdgeData {
   source: EntityId;
   target: EntityId;
@@ -96,3 +92,13 @@ export interface RichEntryInput<TNode, TEdge extends BaseEdgeData, TEvent>
 export type EntryInput<TNode, TEdge extends BaseEdgeData, TEvent> =
   | RichEntryInput<TNode, TEdge, TEvent>
   | RawEntryInput<TNode, TEdge>;
+
+export interface SerializedTemporalGraph<
+  TNode = unknown,
+  TEdge extends BaseEdgeData = BaseEdgeData,
+  TEvent = unknown,
+> {
+  version: 1;
+  cursorIndex: number;
+  entries: LogEntry<TNode, TEdge, TEvent>[];
+}

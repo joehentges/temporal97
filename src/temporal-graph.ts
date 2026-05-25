@@ -6,8 +6,8 @@ import {
   MutationKindEnum,
   MutationOperationEnum,
   type Neighbor,
+  type SerializedTemporalGraph,
   type SnapshotId,
-  type TemporalGraphOptions,
 } from './temporal.types';
 
 import {
@@ -19,7 +19,9 @@ import {
   indexEntry,
   lowerBoundBySnapshot,
   materializeEntry,
+  resolveInNeighbors,
   resolveNeighbors,
+  resolveOutNeighbors,
   reverseEntry,
 } from './utils';
 
@@ -41,12 +43,6 @@ export class TemporalGraph<
   private edgeHistory = new Map<EntityId, number[]>();
 
   private cursorIndex = 0;
-
-  private options: TemporalGraphOptions<TEvent>;
-
-  constructor(options: TemporalGraphOptions<TEvent> = {}) {
-    this.options = options;
-  }
 
   hasNode(id: EntityId): boolean {
     return this.nodeState.has(id);
@@ -92,7 +88,7 @@ export class TemporalGraph<
    * the neighboring node ID, the connecting edge ID, and the full edge data — giving traversal
    * algorithms everything they need in a single call without manual edge lookups.
    *
-   * For directed traversal, filter by `edge.source === id` (outbound) or `edge.target === id` (inbound).
+   * For directed traversal use {@link inNeighbors} or {@link outNeighbors} instead.
    */
   getNeighbors(id: EntityId): IterableIterator<Neighbor<TEdge>> {
     return resolveNeighbors(this.adjacency, this.edgeState, id);
@@ -119,6 +115,43 @@ export class TemporalGraph<
       }
     }
     return result;
+  }
+
+  // Returns an iterator over every neighbor that has an edge pointing into `id` at the current snapshot.
+  inNeighbors(id: EntityId): IterableIterator<Neighbor<TEdge>> {
+    return resolveInNeighbors(this.adjacency, this.edgeState, id);
+  }
+
+  // Returns an iterator over every neighbor that `id` has an outgoing edge to at the current snapshot.
+  outNeighbors(id: EntityId): IterableIterator<Neighbor<TEdge>> {
+    return resolveOutNeighbors(this.adjacency, this.edgeState, id);
+  }
+
+  // Total number of edges connected to `id` (in + out) at the current snapshot.
+  degree(id: EntityId): number {
+    return this.adjacency.get(id)?.size ?? 0;
+  }
+
+  // Number of edges whose target is `id` at the current snapshot.
+  inDegree(id: EntityId): number {
+    const edgeIds = this.adjacency.get(id);
+    if (!edgeIds) return 0;
+    let count = 0;
+    for (const edgeId of edgeIds) {
+      if (this.edgeState.get(edgeId)?.target === id) count += 1;
+    }
+    return count;
+  }
+
+  // Number of edges whose source is `id` at the current snapshot.
+  outDegree(id: EntityId): number {
+    const edgeIds = this.adjacency.get(id);
+    if (!edgeIds) return 0;
+    let count = 0;
+    for (const edgeId of edgeIds) {
+      if (this.edgeState.get(edgeId)?.source === id) count += 1;
+    }
+    return count;
   }
 
   // Scans an edge's mutation history up to `snapshot` and returns its value at that point, or
@@ -271,7 +304,7 @@ export class TemporalGraph<
 
     const delta = emptyDelta();
     applyEntry(this.nodeState, this.edgeState, this.adjacency, entry, delta);
-    indexEntry(this.nodeHistory, this.edgeHistory, this.options, entry, entryIndex);
+    indexEntry(this.nodeHistory, this.edgeHistory, entry, entryIndex);
     this.cursorIndex = this.entries.length;
     return delta;
   }
@@ -304,7 +337,7 @@ export class TemporalGraph<
       const entryIndex = this.entries.length;
       this.entries.push(entry);
       applyEntryNoDelta(this.nodeState, this.edgeState, this.adjacency, entry);
-      indexEntry(this.nodeHistory, this.edgeHistory, this.options, entry, entryIndex);
+      indexEntry(this.nodeHistory, this.edgeHistory, entry, entryIndex);
     }
     this.cursorIndex = this.entries.length;
 
@@ -481,5 +514,37 @@ export class TemporalGraph<
       }
     }
     return result;
+  }
+
+  // Returns a plain serializable object capturing the full mutation log and cursor position.
+  export(): SerializedTemporalGraph<TNode, TEdge, TEvent> {
+    return { version: 1, cursorIndex: this.cursorIndex, entries: [...this.entries] };
+  }
+
+  /**
+   * Restores a TemporalGraph from data produced by {@link export}. Rebuilds all derived state
+   * (live nodes/edges, adjacency, history indexes) by replaying the log up to the saved cursor.
+   * @throws If `data.version` is not supported.
+   */
+  static import<TNode, TEdge extends BaseEdgeData = BaseEdgeData, TEvent = unknown>(
+    data: SerializedTemporalGraph<TNode, TEdge, TEvent>,
+  ): TemporalGraph<TNode, TEdge, TEvent> {
+    if (data.version !== 1) {
+      throw new Error(
+        `Unsupported serialization version: ${(data as { version: number }).version}`,
+      );
+    }
+    const graph = new TemporalGraph<TNode, TEdge, TEvent>();
+    graph.entries = [...data.entries];
+    for (let i = 0; i < graph.entries.length; i += 1) {
+      const entry = graph.entries[i];
+      if (entry === undefined) continue;
+      indexEntry(graph.nodeHistory, graph.edgeHistory, entry, i);
+      if (i < data.cursorIndex) {
+        applyEntryNoDelta(graph.nodeState, graph.edgeState, graph.adjacency, entry);
+      }
+    }
+    graph.cursorIndex = data.cursorIndex;
+    return graph;
   }
 }

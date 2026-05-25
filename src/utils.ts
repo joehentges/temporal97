@@ -9,7 +9,6 @@ import {
   MutationOperationEnum,
   type Neighbor,
   type SnapshotId,
-  type TemporalGraphOptions,
 } from './temporal.types';
 
 export interface Delta {
@@ -142,6 +141,36 @@ export function* resolveNeighbors<TEdge extends BaseEdgeData>(
       edgeId,
       edge,
     };
+  }
+}
+
+// Yields a Neighbor for every edge whose target is `nodeId` (i.e. edges pointing into this node).
+export function* resolveInNeighbors<TEdge extends BaseEdgeData>(
+  adjacency: Map<EntityId, Set<EntityId>>,
+  edgeState: Map<EntityId, TEdge>,
+  nodeId: EntityId,
+): Generator<Neighbor<TEdge>> {
+  const edgeIds = adjacency.get(nodeId);
+  if (!edgeIds) return;
+  for (const edgeId of edgeIds) {
+    const edge = edgeState.get(edgeId);
+    if (edge === undefined || edge.target !== nodeId) continue;
+    yield { nodeId: edge.source, edgeId, edge };
+  }
+}
+
+// Yields a Neighbor for every edge whose source is `nodeId` (i.e. edges going out from this node).
+export function* resolveOutNeighbors<TEdge extends BaseEdgeData>(
+  adjacency: Map<EntityId, Set<EntityId>>,
+  edgeState: Map<EntityId, TEdge>,
+  nodeId: EntityId,
+): Generator<Neighbor<TEdge>> {
+  const edgeIds = adjacency.get(nodeId);
+  if (!edgeIds) return;
+  for (const edgeId of edgeIds) {
+    const edge = edgeState.get(edgeId);
+    if (edge === undefined || edge.source !== nodeId) continue;
+    yield { nodeId: edge.target, edgeId, edge };
   }
 }
 
@@ -393,7 +422,6 @@ export function appendToHistoryIndex(
 export function indexEntry<TNode, TEdge extends BaseEdgeData, TEvent>(
   nodeHistory: Map<EntityId, number[]>,
   edgeHistory: Map<EntityId, number[]>,
-  options: TemporalGraphOptions<TEvent>,
   entry: LogEntry<TNode, TEdge, TEvent>,
   entryIndex: number,
 ): void {
@@ -408,12 +436,6 @@ export function indexEntry<TNode, TEdge extends BaseEdgeData, TEvent>(
       const data = m.op === MutationOperationEnum.Set ? m.value : m.prev;
       touchedNodes.add(data.source);
       touchedNodes.add(data.target);
-    }
-  }
-
-  if (entry.event !== undefined && options.eventEntityRefs) {
-    for (const id of options.eventEntityRefs(entry.event)) {
-      touchedNodes.add(id);
     }
   }
 

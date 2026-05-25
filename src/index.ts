@@ -6,8 +6,8 @@ import type {
   Mutation,
   MutationInput,
   Neighbor,
+  SerializedTemporalGraph,
   SnapshotId,
-  TemporalGraphOptions,
 } from './temporal.types';
 import { TemporalGraph } from './temporal-graph';
 import type { Delta } from './utils';
@@ -21,7 +21,7 @@ export {
   type Mutation,
   type MutationInput,
   type Neighbor,
+  type SerializedTemporalGraph,
   type SnapshotId,
   TemporalGraph,
-  type TemporalGraphOptions,
 };
