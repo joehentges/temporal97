@@ -54,11 +54,16 @@ export class TemporalGraph<
 
   // Returns the value of a node at a specific snapshot, or `undefined` if it did not exist at that snapshot.
   getNodeAt(id: EntityId, snapshot: SnapshotId): TNode | undefined {
-    const history = this.getNodeHistory(id);
+    const indices = this.nodeHistory.get(id);
+    if (!indices) return undefined;
     let result: TNode | undefined;
-    for (const record of history) {
-      if (record.snapshot > snapshot) break;
-      result = record.value;
+    for (const idx of indices) {
+      const entry = this.entries[idx];
+      if (entry === undefined || entry.snapshot > snapshot) break;
+      for (const mutation of entry.mutations) {
+        if (mutation.kind !== MutationKindEnum.Node || mutation.id !== id) continue;
+        result = mutation.op === MutationOperationEnum.Set ? mutation.value : undefined;
+      }
     }
     return result;
   }
