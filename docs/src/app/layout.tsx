@@ -10,7 +10,7 @@ const inter = Inter({
 const title = "temporal97";
 const description =
   "A TypeScript temporal graph with snapshot-based time travel and mutation history tracking.";
-const url = "https://temporal97.github.io";
+const url = "https://joehentges.github.io/temporal97";
 
 export const metadata: Metadata = {
   title: {
