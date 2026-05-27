@@ -62,7 +62,7 @@ console.log(graph.getEdge("a->b")); // { source: "a", target: "b", weight: 1 }
 
 ## Documentation
 
-Full documentation — API reference, core concepts, and integration guides — is available at **[temporal97.github.io](https://temporal97.github.io)**.
+Full documentation — API reference, core concepts, and integration guides — is available at **[joehentges.github.io/temporal97](https://joehentges.github.io/temporal97)**.
 
 ## Contributing
 
