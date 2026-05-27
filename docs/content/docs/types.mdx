@@ -1,0 +1,71 @@
+---
+title: Types
+description: TypeScript types exported by temporal97.
+---
+
+## Primitives
+
+```ts
+type SnapshotId = number;
+type EntityId = string;
+```
+
+## BaseEdgeData
+
+All edge types must extend `BaseEdgeData`:
+
+```ts
+interface BaseEdgeData {
+  source: EntityId;
+  target: EntityId;
+}
+```
+
+## Neighbor
+
+Returned by traversal methods:
+
+```ts
+interface Neighbor<TEdge extends BaseEdgeData> {
+  nodeId: EntityId;
+  edgeId: EntityId;
+  edge: TEdge;
+}
+```
+
+## Delta
+
+Returned by every write and cursor-move operation:
+
+```ts
+interface Delta {
+  nodes: { added: Set<EntityId>; updated: Set<EntityId>; removed: Set<EntityId> };
+  edges: { added: Set<EntityId>; updated: Set<EntityId>; removed: Set<EntityId> };
+}
+```
+
+## LogEntry
+
+```ts
+interface LogEntry<TNode, TEdge, TEvent> {
+  snapshot: SnapshotId;
+  event: TEvent | undefined;
+  mutations: Mutation<TNode, TEdge>[];
+}
+```
+
+## Enums
+
+```ts
+enum MutationKindEnum {
+  Node = "node",
+  Edge = "edge",
+}
+
+enum MutationOperationEnum {
+  Set = "set",
+  Delete = "delete",
+}
+```
+
+String literals (`"node"`, `"edge"`, `"set"`, `"delete"`) are accepted anywhere the enums are used.

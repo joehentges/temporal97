@@ -1,0 +1,51 @@
+---
+title: Quick Start
+description: Build a simple temporal graph in a few lines.
+---
+
+```ts
+import { TemporalGraph, MutationKindEnum, MutationOperationEnum } from "temporal97";
+
+type Node = { label: string };
+type Edge = { source: string; target: string; weight: number };
+
+const graph = new TemporalGraph<Node, Edge>();
+
+// Snapshot 0 — add two nodes and an edge
+graph.append({
+  snapshot: 0,
+  mutations: [
+    { kind: MutationKindEnum.Node, op: MutationOperationEnum.Set, id: "a", value: { label: "Alice" } },
+    { kind: MutationKindEnum.Node, op: MutationOperationEnum.Set, id: "b", value: { label: "Bob" } },
+    { kind: MutationKindEnum.Edge, op: MutationOperationEnum.Set, id: "a->b", value: { source: "a", target: "b", weight: 1 } },
+  ],
+});
+
+// Snapshot 1 — update the edge weight
+graph.append({
+  snapshot: 1,
+  mutations: [
+    { kind: "edge", op: "set", id: "a->b", value: { source: "a", target: "b", weight: 5 } },
+  ],
+});
+
+// Read current (snapshot 1) state
+console.log(graph.getEdge("a->b")); // { source: "a", target: "b", weight: 5 }
+
+// Point-in-time read — no cursor movement required
+console.log(graph.getEdgeAt("a->b", 0)); // { source: "a", target: "b", weight: 1 }
+
+// Rewind the cursor to snapshot 0
+const delta = graph.rewind(0);
+console.log(delta.edges.updated); // Set { "a->b" }
+console.log(graph.getEdge("a->b")); // { source: "a", target: "b", weight: 1 }
+```
+
+You can use string literals (`"node"`, `"edge"`, `"set"`, `"delete"`) or the exported `MutationKindEnum` / `MutationOperationEnum` values interchangeably.
+
+## Next steps
+
+<Cards>
+  <Card title="Core Concepts" href="/docs/concepts" description="Learn about snapshots, mutations, cursors, and deltas." />
+  <Card title="API Reference" href="/docs/api-reference" description="Explore every method in detail." />
+</Cards>

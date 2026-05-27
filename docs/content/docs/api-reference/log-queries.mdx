@@ -1,0 +1,39 @@
+---
+title: Log Queries
+description: Inspect the full mutation log.
+---
+
+Log query methods let you examine the raw history of the graph — which entries exist, which mutations touched a given node or edge, and what events fired at a snapshot.
+
+## Snapshot inspection
+
+| Method | Returns | Description |
+|---|---|---|
+| `getSnapshots()` | `Array<{ snapshot, entries }>` | All snapshots paired with their entries. |
+| `getSnapshotIds()` | `SnapshotId[]` | Ordered list of unique snapshot IDs. |
+| `getEntriesBySnapshot(snapshot)` | `LogEntry[]` | All entries recorded at exactly `snapshot`. |
+| `getEntriesBetween(from, to)` | `LogEntry[]` | All entries in the inclusive range `[from, to]`. |
+
+## Entity history
+
+| Method | Returns | Description |
+|---|---|---|
+| `getEntriesTouching(nodeId)` | `LogEntry[]` | All entries that mutated a node. |
+| `getEntriesTouchingEdge(edgeId)` | `LogEntry[]` | All entries that mutated an edge. |
+| `getNodeHistory(id)` | `Array<{ snapshot, value }>` | Full chronological value history for a node. |
+
+## Events
+
+| Method | Returns | Description |
+|---|---|---|
+| `getEventsAt(snapshot)` | `TEvent[]` | Event payloads attached to entries at `snapshot`. |
+
+## Example — audit trail
+
+```ts
+const history = graph.getNodeHistory("a");
+// [
+//   { snapshot: 0, value: { label: "Alice" } },
+//   { snapshot: 5, value: { label: "Alice K." } },
+// ]
+```

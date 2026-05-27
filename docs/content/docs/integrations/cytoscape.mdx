@@ -1,0 +1,132 @@
+---
+title: Cytoscape.js
+description: Render temporal97 graphs in an interactive Cytoscape.js canvas with selector queries and layout extensions.
+---
+
+[Cytoscape.js](https://js.cytoscape.org/) is a fully-featured graph visualization library that renders to canvas or SVG. It has a powerful selector API (similar to CSS), 70+ layout algorithm extensions, and supports compound (hierarchical) nodes — useful for grouping graph elements by snapshot or event type.
+
+## Installation
+
+```bash
+npm install cytoscape
+npm install --save-dev @types/cytoscape
+```
+
+## Setup
+
+Initialize a Cytoscape instance with an empty element set. Elements are added incrementally via `syncDelta`.
+
+```ts
+import cytoscape, { type Core } from 'cytoscape';
+import { TemporalGraph, type Delta } from 'temporal97';
+
+type NodeAttrs = { label: string; group?: string };
+type EdgeAttrs = { source: string; target: string; weight?: number };
+
+const temporal = new TemporalGraph<NodeAttrs, EdgeAttrs>();
+
+const cy: Core = cytoscape({
+  container: document.getElementById('cy')!,
+  elements: [],
+  style: [
+    { selector: 'node', style: { label: 'data(label)' } },
+    { selector: 'edge', style: { width: 2, 'curve-style': 'bezier' } },
+  ],
+  layout: { name: 'cose' },
+});
+```
+
+## Syncing with Delta
+
+```ts
+function syncDelta(delta: Delta) {
+  // Removals — removing a node also removes its connected edges in Cytoscape
+  cy.remove(cy.nodes().filter(n => delta.nodes.removed.has(n.id())));
+  cy.remove(cy.edges().filter(e => delta.edges.removed.has(e.id())));
+
+  // Additions
+  for (const id of delta.nodes.added) {
+    cy.add({ group: 'nodes', data: { id, ...temporal.getNode(id) } });
+  }
+  for (const id of delta.edges.added) {
+    const e = temporal.getEdge(id)!;
+    cy.add({ group: 'edges', data: { id, source: e.source, target: e.target, ...e } });
+  }
+
+  // Updates
+  for (const id of delta.nodes.updated) {
+    cy.getElementById(id).data(temporal.getNode(id)!);
+  }
+  for (const id of delta.edges.updated) {
+    cy.getElementById(id).data(temporal.getEdge(id)!);
+  }
+
+  // Re-run layout after structural changes
+  if (delta.nodes.added.size > 0 || delta.nodes.removed.size > 0) {
+    cy.layout({ name: 'cose', animate: true } as any).run();
+  }
+}
+```
+
+## Querying with selectors
+
+After syncing, Cytoscape's selector language lets you query the current temporal state in expressive ways:
+
+```ts
+// All nodes with group 'admin'
+const admins = cy.nodes('[group = "admin"]');
+
+// Edges with weight above 5
+const heavyEdges = cy.edges('[weight > 5]');
+
+// Highlight a node's neighborhood
+cy.getElementById('alice').neighborhood().addClass('highlighted');
+```
+
+## Animated time travel
+
+Animate transitions between snapshots using Cytoscape's built-in animation API:
+
+```ts
+function seekAnimated(snapshot: number) {
+  const delta = temporal.seekTo(snapshot);
+
+  // Fade out removed elements before removing them
+  const removedNodes = cy.nodes().filter(n => delta.nodes.removed.has(n.id()));
+  const removedEdges = cy.edges().filter(e => delta.edges.removed.has(e.id()));
+
+  removedNodes.animate({ style: { opacity: 0 } }, { duration: 300, complete: () => {
+    cy.remove(removedNodes);
+    cy.remove(removedEdges);
+  }});
+
+  // Add and fade in new elements
+  for (const id of delta.nodes.added) {
+    cy.add({ group: 'nodes', data: { id, ...temporal.getNode(id) } })
+      .style('opacity', 0)
+      .animate({ style: { opacity: 1 } }, { duration: 300 });
+  }
+  for (const id of delta.edges.added) {
+    const e = temporal.getEdge(id)!;
+    cy.add({ group: 'edges', data: { id, source: e.source, target: e.target } })
+      .style('opacity', 0)
+      .animate({ style: { opacity: 1 } }, { duration: 300 });
+  }
+}
+```
+
+## Compound nodes for snapshots
+
+Cytoscape's compound node feature lets you visually group elements by the snapshot they were introduced at:
+
+```ts
+// Create a parent node for snapshot 3
+cy.add({ group: 'nodes', data: { id: 'snap-3', label: 'Snapshot 3' } });
+
+// Assign children to that snapshot
+for (const id of delta.nodes.added) {
+  cy.add({ group: 'nodes', data: { id, parent: 'snap-3', ...temporal.getNode(id) } });
+}
+```
+
+This is useful for auditing which entities were created together in the same batch.

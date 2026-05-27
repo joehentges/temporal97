@@ -1,0 +1,132 @@
+---
+title: vis-network
+description: Drive a live, physics-simulated network visualization directly from temporal97 Deltas.
+---
+
+[vis-network](https://visjs.github.io/vis-network/docs/network/) renders interactive network diagrams on an HTML canvas with built-in physics simulation, pan/zoom, and click events. Its `DataSet` API is designed for incremental updates — which maps perfectly onto temporal97's Delta.
+
+The result: a live visualization that animates every append, rewind, and seek automatically.
+
+## Installation
+
+```bash
+npm install vis-network vis-data
+```
+
+## Setup
+
+Create vis-network `DataSet` instances and wire them to a `Network`. The datasets are the live state; the network just renders them.
+
+```ts
+import { DataSet } from 'vis-data';
+import { Network } from 'vis-network';
+import { TemporalGraph, type Delta } from 'temporal97';
+
+type NodeAttrs = { label: string };
+type EdgeAttrs = { source: string; target: string };
+
+const temporal = new TemporalGraph<NodeAttrs, EdgeAttrs>();
+
+const nodes = new DataSet<{ id: string; label: string }>();
+const edges = new DataSet<{ id: string; from: string; to: string }>();
+
+const container = document.getElementById('network')!;
+const network = new Network(container, { nodes, edges }, {
+  physics: { stabilization: false },
+});
+```
+
+## Syncing with Delta
+
+```ts
+function syncDelta(delta: Delta) {
+  // Removals
+  nodes.remove([...delta.nodes.removed]);
+  edges.remove([...delta.edges.removed]);
+
+  // Additions
+  for (const id of delta.nodes.added) {
+    const n = temporal.getNode(id)!;
+    nodes.add({ id, label: n.label });
+  }
+  for (const id of delta.edges.added) {
+    const e = temporal.getEdge(id)!;
+    edges.add({ id, from: e.source, to: e.target });
+  }
+
+  // Updates
+  for (const id of delta.nodes.updated) {
+    const n = temporal.getNode(id)!;
+    nodes.update({ id, label: n.label });
+  }
+  for (const id of delta.edges.updated) {
+    const e = temporal.getEdge(id)!;
+    edges.update({ id, from: e.source, to: e.target });
+  }
+}
+```
+
+Now every temporal97 operation feeds the visualization:
+
+```ts
+syncDelta(temporal.append({
+  snapshot: 0,
+  mutations: [
+    { kind: 'node', op: 'set', id: 'alice', value: { label: 'Alice' } },
+    { kind: 'node', op: 'set', id: 'bob',   value: { label: 'Bob' } },
+    { kind: 'edge', op: 'set', id: 'alice->bob', value: { source: 'alice', target: 'bob' } },
+  ],
+}));
+
+syncDelta(temporal.append({
+  snapshot: 1,
+  mutations: [
+    { kind: 'node', op: 'set', id: 'charlie', value: { label: 'Charlie' } },
+    { kind: 'edge', op: 'set', id: 'bob->charlie', value: { source: 'bob', target: 'charlie' } },
+  ],
+}));
+
+// Rewind to snapshot 0 — Charlie and his edge disappear from the canvas automatically
+syncDelta(temporal.rewind(0));
+```
+
+## Building a timeline scrubber
+
+Combine temporal97's snapshot list with a range input to build an interactive time-travel control:
+
+```ts
+const snapshotIds = temporal.getSnapshotIds();
+
+const slider = document.getElementById('slider') as HTMLInputElement;
+slider.min  = '0';
+slider.max  = String(snapshotIds.length - 1);
+slider.value = String(snapshotIds.length - 1);
+
+slider.addEventListener('input', () => {
+  const target = snapshotIds[Number(slider.value)];
+  syncDelta(temporal.seekTo(target));
+});
+```
+
+Dragging the slider seeks through the full mutation history and vis-network animates each change in real time.
+
+## Highlighting changed elements
+
+Use the Delta to briefly highlight nodes and edges that were just added or updated:
+
+```ts
+function syncDeltaWithHighlight(delta: Delta) {
+  syncDelta(delta);
+
+  const changed = [
+    ...[...delta.nodes.added],
+    ...[...delta.nodes.updated],
+  ];
+
+  nodes.update(changed.map(id => ({ id, color: { background: '#f97316' } })));
+
+  setTimeout(() => {
+    nodes.update(changed.map(id => ({ id, color: undefined })));
+  }, 800);
+}
+```

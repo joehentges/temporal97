@@ -1,0 +1,44 @@
+---
+title: Reading State
+description: Read the graph at the current cursor position.
+---
+
+All methods and properties in this section reflect the graph at the **current cursor position**. Move the cursor with `seekTo()`, `advance()`, or `rewind()` to change what they return.
+
+## Nodes
+
+| Method / Property | Returns | Description |
+|---|---|---|
+| `hasNode(id)` | `boolean` | Whether the node exists at the current snapshot. |
+| `getNode(id)` | `TNode \| undefined` | Node data, or `undefined` if deleted or never added. |
+| `liveNodes()` | `IterableIterator<[EntityId, TNode]>` | All alive nodes. |
+| `nodeCount` | `number` | Number of alive nodes. |
+
+## Edges
+
+| Method / Property | Returns | Description |
+|---|---|---|
+| `hasEdge(id)` | `boolean` | Whether the edge exists. |
+| `getEdge(id)` | `TEdge \| undefined` | Edge data, or `undefined`. |
+| `getEdgesForNode(id)` | `ReadonlySet<EntityId>` | All edge IDs connected to a node. |
+| `liveEdges()` | `IterableIterator<[EntityId, TEdge]>` | All alive edges. |
+| `edgeCount` | `number` | Number of alive edges. |
+
+## Traversal
+
+| Method | Returns | Description |
+|---|---|---|
+| `getNeighbors(id)` | `IterableIterator<Neighbor>` | All neighbors of a node (in + out). |
+| `inNeighbors(id)` | `IterableIterator<Neighbor>` | Neighbors with an edge pointing **into** `id`. |
+| `outNeighbors(id)` | `IterableIterator<Neighbor>` | Neighbors `id` has an outgoing edge **to**. |
+| `degree(id)` | `number` | Total edge count (in + out). |
+| `inDegree(id)` | `number` | Number of incoming edges. |
+| `outDegree(id)` | `number` | Number of outgoing edges. |
+
+## Snapshot info
+
+| Method / Property | Returns | Description |
+|---|---|---|
+| `currentSnapshot` | `SnapshotId` | The snapshot at the cursor (`-Infinity` when empty). |
+| `entryCount` | `number` | Total log entries across all snapshots. |
+| `getLiveSnapshot()` | `{ nodes, edges, events }` | Live nodes, edges, and events at the current snapshot. |

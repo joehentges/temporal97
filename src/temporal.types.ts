@@ -25,8 +25,8 @@ export enum MutationOperationEnum {
 export type MutationOperation = keyof typeof MutationOperationEnum;
 
 export type NodeSetMutation<TNode> = {
-  kind: MutationKindEnum.Node;
-  op: MutationOperationEnum.Set;
+  kind: MutationKindEnum.Node | 'node';
+  op: MutationOperationEnum.Set | 'set';
   id: EntityId;
   value: TNode;
   prev: TNode | undefined;
@@ -34,16 +34,16 @@ export type NodeSetMutation<TNode> = {
 export type NodeSetMutationInput<TNode> = Omit<NodeSetMutation<TNode>, 'prev'>;
 
 export type NodeDeleteMutation<TNode> = {
-  kind: MutationKindEnum.Node;
-  op: MutationOperationEnum.Delete;
+  kind: MutationKindEnum.Node | 'node';
+  op: MutationOperationEnum.Delete | 'delete';
   id: EntityId;
   prev: TNode;
 };
 export type NodeDeleteMutationInput<TNode> = Omit<NodeDeleteMutation<TNode>, 'prev'>;
 
 export type EdgeSetMutation<TEdge extends BaseEdgeData> = {
-  kind: MutationKindEnum.Edge;
-  op: MutationOperationEnum.Set;
+  kind: MutationKindEnum.Edge | 'edge';
+  op: MutationOperationEnum.Set | 'set';
   id: EntityId;
   value: TEdge;
   prev: TEdge | undefined;
@@ -51,8 +51,8 @@ export type EdgeSetMutation<TEdge extends BaseEdgeData> = {
 export type EdgeSetMutationInput<TEdge extends BaseEdgeData> = Omit<EdgeSetMutation<TEdge>, 'prev'>;
 
 export type EdgeDeleteMutation<TEdge extends BaseEdgeData> = {
-  kind: MutationKindEnum.Edge;
-  op: MutationOperationEnum.Delete;
+  kind: MutationKindEnum.Edge | 'edge';
+  op: MutationOperationEnum.Delete | 'delete';
   id: EntityId;
   prev: TEdge;
 };
