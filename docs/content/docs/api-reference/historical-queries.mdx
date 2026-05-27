@@ -10,7 +10,7 @@ Historical query methods let you inspect arbitrary points in time without distur
 Returns the node's value at the given snapshot, or `undefined` if it didn't exist.
 
 ```ts
-const alice = graph.getNodeAt("a", 1); // { label: "Alice" }
+const alice = graph.getNodeAt("a", 0); // { label: "Alice" }
 ```
 
 ## getEdgeAt(id, snapshot)
@@ -18,7 +18,7 @@ const alice = graph.getNodeAt("a", 1); // { label: "Alice" }
 Returns the edge's value at the given snapshot, or `undefined`.
 
 ```ts
-const edge = graph.getEdgeAt("a->b", 1); // { source: "a", target: "b", weight: 1 }
+const edge = graph.getEdgeAt("a->b", 0); // { source: "a", target: "b", weight: 1 }
 ```
 
 ## getEdgesForNodeAt(id, snapshot)
@@ -26,7 +26,7 @@ const edge = graph.getEdgeAt("a->b", 1); // { source: "a", target: "b", weight: 
 Returns the set of edge IDs connected to a node at the given snapshot.
 
 ```ts
-const edges = graph.getEdgesForNodeAt("a", 1); // ReadonlySet<EntityId>
+const edges = graph.getEdgesForNodeAt("a", 0); // ReadonlySet<EntityId>
 ```
 
 ## getNeighborsAt(id, snapshot)
@@ -34,6 +34,6 @@ const edges = graph.getEdgesForNodeAt("a", 1); // ReadonlySet<EntityId>
 Returns an array of `Neighbor` objects for all nodes adjacent to `id` at the given snapshot.
 
 ```ts
-const neighbors = graph.getNeighborsAt("a", 1);
+const neighbors = graph.getNeighborsAt("a", 0);
 // [{ nodeId: "b", edgeId: "a->b", edge: { ... } }]
 ```
