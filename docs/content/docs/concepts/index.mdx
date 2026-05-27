@@ -1,0 +1,57 @@
+---
+title: Core Concepts
+description: The five building blocks behind temporal97.
+---
+
+## Snapshot
+
+A `SnapshotId` is a plain `number` that acts as a logical timestamp. Multiple log entries can share the same snapshot — for example, a batch of mutations that all happen "at once" in your domain model.
+
+Snapshots are ordered but not required to be consecutive. You can use integers, Unix timestamps, sequence numbers, or any monotonically increasing values.
+
+## Mutation
+
+A single `Set` or `Delete` operation targeting one node or one edge. Mutations are never applied in isolation — they are always grouped inside an **Entry**.
+
+```ts
+{ kind: "node", op: "set",    id: "a", value: { label: "Alice" } }
+{ kind: "edge", op: "delete", id: "a->b" }
+```
+
+The `kind` field is either `"node"` or `"edge"`. The `op` field is either `"set"` or `"delete"`. Both accept string literals or the exported enums `MutationKindEnum` and `MutationOperationEnum`.
+
+## Entry
+
+An **Entry** is the unit written to the log. It bundles one snapshot ID, an optional typed event payload, and an array of mutations.
+
+```ts
+graph.append({
+  snapshot: 42,
+  event: { type: "user-joined", userId: "u1" }, // optional
+  mutations: [
+    { kind: "node", op: "set", id: "u1", value: { name: "Alice" } },
+  ],
+});
+```
+
+The generic type parameter `TEvent` on `TemporalGraph<TNode, TEdge, TEvent>` types these payloads.
+
+## Cursor
+
+The **cursor** marks the graph's current live position in the log. Reading methods like `getNode()` and `liveNodes()` reflect the state at the cursor.
+
+- `append()` and `ingest()` require the cursor to be at the head of the log.
+- `advance()`, `rewind()`, and `seekTo()` move the cursor and update the live state.
+
+## Delta
+
+Every write and every cursor movement returns a `Delta` — a description of what changed:
+
+```ts
+interface Delta {
+  nodes: { added: Set<EntityId>; updated: Set<EntityId>; removed: Set<EntityId> };
+  edges: { added: Set<EntityId>; updated: Set<EntityId>; removed: Set<EntityId> };
+}
+```
+
+Deltas are useful for driving incremental re-renders, computing diffs, or logging changes without re-scanning the entire graph.

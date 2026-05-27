@@ -1,13 +1,12 @@
 ---
-title: Hello World
-description: Your first document
+title: temporal97
+description: A TypeScript temporal graph with snapshot-based time travel and mutation history tracking.
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
-
-## What is Next?
+`temporal97` is a fully-typed graph data structure that records every change as an immutable log. You can replay history forward with `advance()`, undo it with `rewind()`, or jump to any point in time with `seekTo()`. Point-in-time queries let you read the value of any node or edge without moving the cursor.
 
 <Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
+  <Card title="Getting Started" href="/docs/getting-started" description="Install the library and run your first graph." />
+  <Card title="Core Concepts" href="/docs/concepts" description="Understand snapshots, mutations, cursors, and deltas." />
+  <Card title="API Reference" href="/docs/api-reference" description="Complete method and type reference." />
 </Cards>

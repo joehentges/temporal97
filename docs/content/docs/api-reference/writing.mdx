@@ -1,0 +1,38 @@
+---
+title: Writing
+description: Add entries to the temporal log.
+---
+
+## append(input)
+
+Appends a single entry at the head of the log. Returns a `Delta` describing what changed.
+
+**Throws** if:
+- The cursor is not at the head of the log (i.e. you have rewound without re-advancing).
+- The snapshot would go backwards relative to the last entry.
+
+```ts
+const delta = graph.append({
+  snapshot: 3,
+  event: { type: "node-removed" }, // optional
+  mutations: [
+    { kind: "node", op: "delete", id: "b" },
+  ],
+});
+// delta.nodes.removed → Set { "b" }
+```
+
+## ingest(inputs)
+
+Bulk-appends a pre-sorted array of entries. More efficient than repeated `append()` calls because it computes a single diff for the whole batch.
+
+**Throws** if entries are not in ascending snapshot order.
+
+```ts
+graph.ingest([
+  { snapshot: 10, mutations: [...] },
+  { snapshot: 20, mutations: [...] },
+]);
+```
+
+Use `ingest()` when loading historical data or replaying a stream of events — it avoids the overhead of computing intermediate deltas for each entry.

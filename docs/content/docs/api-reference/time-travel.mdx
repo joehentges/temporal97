@@ -1,0 +1,31 @@
+---
+title: Time Travel
+description: Move the cursor forward, backward, or to any snapshot.
+---
+
+All three methods return a `Delta` describing what changed when the cursor moved.
+
+## seekTo(snapshot)
+
+Moves the cursor to any snapshot — forward or backward. This is the general-purpose alternative to calling `advance()` or `rewind()` directly when you don't know the direction.
+
+```ts
+const delta = graph.seekTo(5);
+```
+
+## advance(snapshot)
+
+Moves the cursor forward. **Throws** if `snapshot` is before the current cursor position.
+
+```ts
+const delta = graph.advance(10);
+```
+
+## rewind(snapshot)
+
+Moves the cursor backward by undoing entries in reverse order. **Throws** if `snapshot` is after the current cursor position.
+
+```ts
+const delta = graph.rewind(3);
+console.log(delta.edges.updated); // edges that were rolled back
+```

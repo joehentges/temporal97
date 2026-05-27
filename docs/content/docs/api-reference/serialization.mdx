@@ -1,0 +1,26 @@
+---
+title: Serialization
+description: Export and restore a TemporalGraph.
+---
+
+## graph.export()
+
+Returns a plain, JSON-serializable object capturing the full mutation log and current cursor position.
+
+```ts
+const data = graph.export();
+localStorage.setItem("graph", JSON.stringify(data));
+```
+
+The returned `SerializedTemporalGraph` contains everything needed to restore an identical graph — no information is lost.
+
+## TemporalGraph.import(data)
+
+Static method. Restores a graph from exported data by replaying the mutation log up to the saved cursor position.
+
+```ts
+const data = JSON.parse(localStorage.getItem("graph")!);
+const graph = TemporalGraph.import<Node, Edge>(data);
+```
+
+The generic type parameters carry through so you get a fully-typed `TemporalGraph<TNode, TEdge>` back.

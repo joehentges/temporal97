@@ -51,6 +51,6 @@
     }
   },
   "files": {
-    "includes": ["**", "!dist", "!node_modules", "!coverage", "!*.d.ts"]
+    "includes": ["**", "!docs", "!dist", "!node_modules", "!coverage", "!*.d.ts"]
   }
 }
