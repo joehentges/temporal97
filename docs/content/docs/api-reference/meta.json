@@ -1,4 +1,12 @@
 {
   "title": "API Reference",
-  "pages": ["index", "writing", "time-travel", "reading-state", "historical-queries", "log-queries", "serialization"]
+  "pages": [
+    "index",
+    "writing",
+    "time-travel",
+    "reading-state",
+    "historical-queries",
+    "log-queries",
+    "serialization"
+  ]
 }

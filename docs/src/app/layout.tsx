@@ -1,16 +1,16 @@
-import { Inter } from 'next/font/google';
-import { Provider } from '@/components/provider';
-import './global.css';
-import { Metadata } from 'next';
+import { Inter } from "next/font/google";
+import { Provider } from "@/components/provider";
+import "./global.css";
+import type { Metadata } from "next";
 
 const inter = Inter({
-  subsets: ['latin'],
+  subsets: ["latin"],
 });
 
-const title = 'temporal97';
+const title = "temporal97";
 const description =
-  'A TypeScript temporal graph with snapshot-based time travel and mutation history tracking.';
-const url = 'https://temporal97.github.io';
+  "A TypeScript temporal graph with snapshot-based time travel and mutation history tracking.";
+const url = "https://temporal97.github.io";
 
 export const metadata: Metadata = {
   title: {
@@ -19,29 +19,29 @@ export const metadata: Metadata = {
   },
   description,
   keywords: [
-    'temporal graph',
-    'time travel',
-    'graph data structure',
-    'TypeScript',
-    'mutation history',
-    'snapshot',
+    "temporal graph",
+    "time travel",
+    "graph data structure",
+    "TypeScript",
+    "mutation history",
+    "snapshot",
   ],
-  authors: [{ name: 'Joe Hentges', url: 'https://github.com/joehentges' }],
-  creator: 'Joe Hentges',
+  authors: [{ name: "Joe Hentges", url: "https://github.com/joehentges" }],
+  creator: "Joe Hentges",
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
+    type: "website",
+    locale: "en_US",
     url,
     title,
     description,
     siteName: title,
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: "/favicon.ico",
   },
 };
 
-export default function Layout({ children }: LayoutProps<'/'>) {
+export default function Layout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen">
