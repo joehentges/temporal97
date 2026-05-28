@@ -1,0 +1,109 @@
+---
+title: Performance
+description: Time complexity for every public method and guidance on what to watch for.
+---
+
+## Notation
+
+| Symbol | Meaning |
+|---|---|
+| N | Total log entries across all snapshots |
+| S | Number of unique snapshots |
+| H_n | Number of log entries that touched a given node (direct mutation or connected edge) |
+| H_e | Number of log entries that touched a given edge |
+| E | Total number of unique edges ever created |
+| M | Number of mutations in a single entry |
+| K | Number of entries between two cursor positions |
+| R | Number of results returned |
+
+All times are for a single call. Iterator methods (`liveNodes`, `liveEdges`, `getNeighbors`, `inNeighbors`, `outNeighbors`) return in O(1) — the cost of iteration is paid by the caller per item.
+
+## Current-state reads
+
+These reflect the live state at the cursor and are all O(1) Map or Set lookups.
+
+| Method | Time |
+|---|---|
+| `hasNode(id)` | O(1) |
+| `getNode(id)` | O(1) |
+| `hasEdge(id)` | O(1) |
+| `getEdge(id)` | O(1) |
+| `getEdgesForNode(id)` | O(1) |
+| `degree(id)` | O(1) |
+| `inDegree(id)` | O(degree) |
+| `outDegree(id)` | O(degree) |
+| `liveNodes()` | O(1) to obtain iterator |
+| `liveEdges()` | O(1) to obtain iterator |
+| `getNeighbors(id)` | O(1) to obtain iterator; O(degree) to exhaust |
+| `inNeighbors(id)` | O(1) to obtain iterator; O(degree) to exhaust |
+| `outNeighbors(id)` | O(1) to obtain iterator; O(degree) to exhaust |
+| `nodeCount` | O(1) |
+| `edgeCount` | O(1) |
+| `entryCount` | O(1) |
+| `currentSnapshot` | O(1) |
+
+## Historical reads
+
+These query a past point in time without moving the cursor.
+
+| Method | Time | Notes |
+|---|---|---|
+| `getNodeAt(id, snapshot)` | O(H_n) | Scans only entries that touched this node — see note below |
+| `getEdgeAt(id, snapshot)` | O(H_e) | Scans only entries that touched this edge |
+| `getEdgesForNodeAt(id, snapshot)` | O(E × H_e) | Scans **all** edge histories — see warning below |
+
+### `getNodeAt` degrades with update frequency, not graph size
+
+`getNodeAt` is O(H_n) — the number of times *that specific node* was mutated, not the total graph size. For a node that was set once, it runs at ~7.7M ops/sec. For a node updated 1,000 times it drops to ~70K ops/sec, and at 10,000 updates to ~6K ops/sec. Total node count is irrelevant; only the mutation history of the queried node matters.
+
+In practice: infrequently-updated nodes (labels, metadata) are cheap regardless of log length. Frequently-updated nodes (counters, scores, positions) become expensive proportional to their own history depth.
+
+### `getEdgesForNodeAt` is O(E × H_e)
+
+`getEdgesForNodeAt` must scan every edge's full history to check whether it was alive and connected at the target snapshot. In a graph with 10 K unique edges that were each mutated a few times, a single call may visit tens of thousands of history entries. For high-frequency historical traversal, prefer `seekTo(snapshot)` then `getEdgesForNode(id)`, which is O(K × M) to seek and O(1) to read.
+
+## Writes
+
+| Method | Time | Notes |
+|---|---|---|
+| `append(entry)` | O(M) | Cursor must be at head |
+| `ingest(entries[])` | O(N × M) | Computes a single diff across the whole batch |
+
+## Time travel
+
+All three methods apply or reverse entries between the current and target snapshot.
+
+| Method | Time |
+|---|---|
+| `advance(snapshot)` | O(K × M) |
+| `rewind(snapshot)` | O(K × M) |
+| `seekTo(snapshot)` | O(K × M) |
+
+Seeking from one end of the log to the other is proportional to the total number of mutations in between, not the number of snapshots. A log with many mutations per snapshot costs more to seek than a sparse one.
+
+## Log queries
+
+| Method | Time | Notes |
+|---|---|---|
+| `getSnapshotIds()` | O(N) | Single pass |
+| `getEntriesBySnapshot(snapshot)` | O(log N + R) | Binary search then scan |
+| `getEntriesBetween(from, to)` | O(log N + R) | Binary search then scan |
+| `getEntriesTouchingNode(id)` | O(H_n) | Index lookup |
+| `getEntriesTouchingEdge(id)` | O(H_e) | Index lookup |
+| `getEventsAt(snapshot)` | O(log N + R) | Binary search then scan |
+| `getNodeHistory(id)` | O(H_n) | Index lookup |
+
+## Serialization
+
+| Method | Time | Notes |
+|---|---|---|
+| `export()` | O(N) | Shallow-copies the entries array |
+| `import(data)` | O(N × M) | Full log replay to rebuild live state and indexes |
+
+## Running the benchmarks
+
+```bash
+npm run bench
+```
+
+This runs the benchmark suite in `bench/temporal-graph.bench.ts` at 1 K, 10 K, and 100 K scales and prints ops/sec for each scenario.

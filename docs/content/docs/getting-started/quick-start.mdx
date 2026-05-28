@@ -4,7 +4,7 @@ description: Build a simple temporal graph in a few lines.
 ---
 
 ```ts
-import { TemporalGraph, MutationKindEnum, MutationOperationEnum } from "temporal97";
+import { TemporalGraph } from "temporal97";
 
 type Node = { label: string };
 type Edge = { source: string; target: string; weight: number };
@@ -15,9 +15,9 @@ const graph = new TemporalGraph<Node, Edge>();
 graph.append({
   snapshot: 0,
   mutations: [
-    { kind: MutationKindEnum.Node, op: MutationOperationEnum.Set, id: "a", value: { label: "Alice" } },
-    { kind: MutationKindEnum.Node, op: MutationOperationEnum.Set, id: "b", value: { label: "Bob" } },
-    { kind: MutationKindEnum.Edge, op: MutationOperationEnum.Set, id: "a->b", value: { source: "a", target: "b", weight: 1 } },
+    { kind: "node", op: "set", id: "a", value: { label: "Alice" } },
+    { kind: "node", op: "set", id: "b", value: { label: "Bob" } },
+    { kind: "edge", op: "set", id: "a->b", value: { source: "a", target: "b", weight: 1 } },
   ],
 });
 
@@ -41,7 +41,7 @@ console.log(delta.edges.updated); // Set { "a->b" }
 console.log(graph.getEdge("a->b")); // { source: "a", target: "b", weight: 1 }
 ```
 
-You can use string literals (`"node"`, `"edge"`, `"set"`, `"delete"`) or the exported `MutationKindEnum` / `MutationOperationEnum` values interchangeably.
+Use string literals (`"node"`, `"edge"`, `"set"`, `"delete"`) for `kind` and `op`. The enums `MutationKindEnum` and `MutationOperationEnum` are exported for compatibility but literals are preferred.
 
 ## Next steps
 

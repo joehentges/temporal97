@@ -1,4 +1,10 @@
 import {
+  CursorNotAtHeadError,
+  SeekDirectionError,
+  SnapshotOrderError,
+  UnsupportedVersionError,
+} from './errors';
+import {
   type BaseEdgeData,
   type EntityId,
   type EntryInput,
@@ -9,7 +15,6 @@ import {
   type SerializedTemporalGraph,
   type SnapshotId,
 } from './temporal.types';
-
 import {
   applyEntry,
   applyEntryNoDelta,
@@ -97,29 +102,6 @@ export class TemporalGraph<
    */
   getNeighbors(id: EntityId): IterableIterator<Neighbor<TEdge>> {
     return resolveNeighbors(this.adjacency, this.edgeState, id);
-  }
-
-  /**
-   * Returns every neighbor of `id` as it existed at `snapshot`. Scans edge history in a single
-   * pass to find edges that were alive and connected to `id` at that point in time, returning
-   * the edge value and resolved neighbor ID for each.
-   *
-   * Use this when running traversal algorithms over a historical state of the graph rather than
-   * the current live state. Pair with {@link getNodeAt} to read node data at the same snapshot.
-   */
-  getNeighborsAt(id: EntityId, snapshot: SnapshotId): ReadonlyArray<Neighbor<TEdge>> {
-    const result: Neighbor<TEdge>[] = [];
-    for (const [edgeId, indices] of this.edgeHistory) {
-      const edge = this.getEdgeValueAt(edgeId, indices, snapshot);
-      if (edge !== undefined && (edge.source === id || edge.target === id)) {
-        result.push({
-          nodeId: edge.source === id ? edge.target : edge.source,
-          edgeId,
-          edge,
-        });
-      }
-    }
-    return result;
   }
 
   // Returns an iterator over every neighbor that has an edge pointing into `id` at the current snapshot.
@@ -214,28 +196,6 @@ export class TemporalGraph<
     return result;
   }
 
-  // Returns all snapshots in the log, each paired with the entries recorded at that snapshot.
-  getSnapshots(): {
-    snapshot: SnapshotId;
-    entries: LogEntry<TNode, TEdge, TEvent>[];
-  }[] {
-    const result: {
-      snapshot: SnapshotId;
-      entries: LogEntry<TNode, TEdge, TEvent>[];
-    }[] = [];
-    let currentSnapshot: SnapshotId | undefined;
-
-    for (const entry of this.entries) {
-      if (entry.snapshot !== currentSnapshot) {
-        currentSnapshot = entry.snapshot;
-        result.push({ snapshot: currentSnapshot, entries: [] });
-      }
-      result[result.length - 1]?.entries.push(entry);
-    }
-
-    return result;
-  }
-
   // Returns an ordered list of every unique snapshot ID in the log.
   getSnapshotIds(): SnapshotId[] {
     const result: SnapshotId[] = [];
@@ -295,12 +255,10 @@ export class TemporalGraph<
    */
   append(input: EntryInput<TNode, TEdge, TEvent>): Delta {
     if (this.cursorIndex !== this.entries.length) {
-      throw new Error('append() requires the cursor to be at head. Call seekTo(head) first.');
+      throw new CursorNotAtHeadError('append');
     }
     if (input.snapshot < this.currentSnapshot) {
-      throw new Error(
-        `append() snapshot ${input.snapshot} is before current ${this.currentSnapshot}.`,
-      );
+      throw new SnapshotOrderError('append', input.snapshot, this.currentSnapshot);
     }
 
     const entry = materializeEntry(this.nodeState, this.edgeState, input);
@@ -322,7 +280,7 @@ export class TemporalGraph<
    */
   ingest(inputs: EntryInput<TNode, TEdge, TEvent>[]): Delta {
     if (this.cursorIndex !== this.entries.length) {
-      throw new Error('ingest() requires the cursor to be at head.');
+      throw new CursorNotAtHeadError('ingest');
     }
 
     const preNodes = new Set(this.nodeState.keys());
@@ -333,9 +291,7 @@ export class TemporalGraph<
     let lastSnapshot = this.currentSnapshot;
     for (const input of inputs) {
       if (input.snapshot < lastSnapshot) {
-        throw new Error(
-          `ingest() entries must be sorted by snapshot. Got ${input.snapshot} after ${lastSnapshot}.`,
-        );
+        throw new SnapshotOrderError('ingest', input.snapshot, lastSnapshot);
       }
       lastSnapshot = input.snapshot;
       const entry = materializeEntry(this.nodeState, this.edgeState, input);
@@ -363,7 +319,7 @@ export class TemporalGraph<
    */
   advance(targetSnapshot: SnapshotId): Delta {
     if (targetSnapshot < this.currentSnapshot) {
-      throw new Error('advance() target is before current. Use rewind() or seekTo().');
+      throw new SeekDirectionError('advance');
     }
 
     const preNodes = new Set(this.nodeState.keys());
@@ -395,7 +351,7 @@ export class TemporalGraph<
    */
   rewind(targetSnapshot: SnapshotId): Delta {
     if (targetSnapshot > this.currentSnapshot) {
-      throw new Error('rewind() target is after current. Use advance() or seekTo().');
+      throw new SeekDirectionError('rewind');
     }
 
     const preNodes = new Set(this.nodeState.keys());
@@ -448,7 +404,7 @@ export class TemporalGraph<
    * Returns every log entry that mutated node `id` or referenced it via a connected edge.
    * Useful for auditing the full history of a node across all snapshots.
    */
-  getEntriesTouching(id: EntityId): LogEntry<TNode, TEdge, TEvent>[] {
+  getEntriesTouchingNode(id: EntityId): LogEntry<TNode, TEdge, TEvent>[] {
     const indices = this.nodeHistory.get(id);
     if (!indices) return [];
     const result: LogEntry<TNode, TEdge, TEvent>[] = [];
@@ -535,9 +491,7 @@ export class TemporalGraph<
     data: SerializedTemporalGraph<TNode, TEdge, TEvent>,
   ): TemporalGraph<TNode, TEdge, TEvent> {
     if (data.version !== 1) {
-      throw new Error(
-        `Unsupported serialization version: ${(data as { version: number }).version}`,
-      );
+      throw new UnsupportedVersionError((data as { version: number }).version);
     }
     const graph = new TemporalGraph<TNode, TEdge, TEvent>();
     graph.entries = [...data.entries];

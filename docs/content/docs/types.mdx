@@ -54,18 +54,13 @@ interface LogEntry<TNode, TEdge, TEvent> {
 }
 ```
 
-## Enums
+## Mutation kind and operation
 
-```ts
-enum MutationKindEnum {
-  Node = "node",
-  Edge = "edge",
-}
+The `kind` and `op` fields on mutations use string literals:
 
-enum MutationOperationEnum {
-  Set = "set",
-  Delete = "delete",
-}
-```
+| Field | Values |
+|---|---|
+| `kind` | `"node"` \| `"edge"` |
+| `op` | `"set"` \| `"delete"` |
 
-String literals (`"node"`, `"edge"`, `"set"`, `"delete"`) are accepted anywhere the enums are used.
+`MutationKindEnum` and `MutationOperationEnum` are exported for compatibility with codebases that prefer enums, but string literals are the recommended style.

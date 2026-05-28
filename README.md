@@ -64,6 +64,10 @@ console.log(graph.getEdge("a->b")); // { source: "a", target: "b", weight: 1 }
 
 Full documentation — API reference, core concepts, and integration guides — is available at **[joehentges.github.io/temporal97](https://joehentges.github.io/temporal97)**.
 
+## Concurrency
+
+`temporal97` is single-writer by design. Concurrent writes from multiple sources will produce incorrect history. For multi-writer scenarios, serialize mutations through a single event log (Kafka, EventStore, a database queue) and project the ordered stream into the graph. If you need distributed collaboration, use a CRDT (Yjs, Automerge) as the source of truth and feed its resolved operations into `temporal97` as a read model.
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.

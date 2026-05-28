@@ -9,7 +9,6 @@ Log query methods let you examine the raw history of the graph — which entries
 
 | Method | Returns | Description |
 |---|---|---|
-| `getSnapshots()` | `Array<{ snapshot, entries }>` | All snapshots paired with their entries. |
 | `getSnapshotIds()` | `SnapshotId[]` | Ordered list of unique snapshot IDs. |
 | `getEntriesBySnapshot(snapshot)` | `LogEntry[]` | All entries recorded at exactly `snapshot`. |
 | `getEntriesBetween(from, to)` | `LogEntry[]` | All entries in the inclusive range `[from, to]`. |
@@ -18,7 +17,7 @@ Log query methods let you examine the raw history of the graph — which entries
 
 | Method | Returns | Description |
 |---|---|---|
-| `getEntriesTouching(nodeId)` | `LogEntry[]` | All entries that mutated a node. |
+| `getEntriesTouchingNode(nodeId)` | `LogEntry[]` | All entries that mutated a node. |
 | `getEntriesTouchingEdge(edgeId)` | `LogEntry[]` | All entries that mutated an edge. |
 | `getNodeHistory(id)` | `Array<{ snapshot, value }>` | Full chronological value history for a node. |
 
