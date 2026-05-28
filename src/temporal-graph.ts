@@ -1,4 +1,10 @@
 import {
+  CursorNotAtHeadError,
+  SeekDirectionError,
+  SnapshotOrderError,
+  UnsupportedVersionError,
+} from './errors';
+import {
   type BaseEdgeData,
   type EntityId,
   type EntryInput,
@@ -9,7 +15,6 @@ import {
   type SerializedTemporalGraph,
   type SnapshotId,
 } from './temporal.types';
-
 import {
   applyEntry,
   applyEntryNoDelta,
@@ -250,12 +255,10 @@ export class TemporalGraph<
    */
   append(input: EntryInput<TNode, TEdge, TEvent>): Delta {
     if (this.cursorIndex !== this.entries.length) {
-      throw new Error('append() requires the cursor to be at head. Call seekTo(head) first.');
+      throw new CursorNotAtHeadError('append');
     }
     if (input.snapshot < this.currentSnapshot) {
-      throw new Error(
-        `append() snapshot ${input.snapshot} is before current ${this.currentSnapshot}.`,
-      );
+      throw new SnapshotOrderError('append', input.snapshot, this.currentSnapshot);
     }
 
     const entry = materializeEntry(this.nodeState, this.edgeState, input);
@@ -277,7 +280,7 @@ export class TemporalGraph<
    */
   ingest(inputs: EntryInput<TNode, TEdge, TEvent>[]): Delta {
     if (this.cursorIndex !== this.entries.length) {
-      throw new Error('ingest() requires the cursor to be at head.');
+      throw new CursorNotAtHeadError('ingest');
     }
 
     const preNodes = new Set(this.nodeState.keys());
@@ -288,9 +291,7 @@ export class TemporalGraph<
     let lastSnapshot = this.currentSnapshot;
     for (const input of inputs) {
       if (input.snapshot < lastSnapshot) {
-        throw new Error(
-          `ingest() entries must be sorted by snapshot. Got ${input.snapshot} after ${lastSnapshot}.`,
-        );
+        throw new SnapshotOrderError('ingest', input.snapshot, lastSnapshot);
       }
       lastSnapshot = input.snapshot;
       const entry = materializeEntry(this.nodeState, this.edgeState, input);
@@ -318,7 +319,7 @@ export class TemporalGraph<
    */
   advance(targetSnapshot: SnapshotId): Delta {
     if (targetSnapshot < this.currentSnapshot) {
-      throw new Error('advance() target is before current. Use rewind() or seekTo().');
+      throw new SeekDirectionError('advance');
     }
 
     const preNodes = new Set(this.nodeState.keys());
@@ -350,7 +351,7 @@ export class TemporalGraph<
    */
   rewind(targetSnapshot: SnapshotId): Delta {
     if (targetSnapshot > this.currentSnapshot) {
-      throw new Error('rewind() target is after current. Use advance() or seekTo().');
+      throw new SeekDirectionError('rewind');
     }
 
     const preNodes = new Set(this.nodeState.keys());
@@ -490,9 +491,7 @@ export class TemporalGraph<
     data: SerializedTemporalGraph<TNode, TEdge, TEvent>,
   ): TemporalGraph<TNode, TEdge, TEvent> {
     if (data.version !== 1) {
-      throw new Error(
-        `Unsupported serialization version: ${(data as { version: number }).version}`,
-      );
+      throw new UnsupportedVersionError((data as { version: number }).version);
     }
     const graph = new TemporalGraph<TNode, TEdge, TEvent>();
     graph.entries = [...data.entries];

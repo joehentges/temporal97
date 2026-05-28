@@ -1,21 +1,12 @@
-import type {
-  BaseEdgeData,
-  EntityId,
-  EntryInput,
-  LogEntry,
-  Mutation,
-  MutationInput,
-  Neighbor,
-  SerializedTemporalGraph,
-  SnapshotId,
-} from './temporal.types';
-import { MutationKindEnum, MutationOperationEnum } from './temporal.types';
-import { TemporalGraph } from './temporal-graph';
-import type { Delta } from './utils';
-
-export {
+import {
+  CursorNotAtHeadError,
+  EntityNotFoundError,
+  SeekDirectionError,
+  SnapshotOrderError,
+  UnsupportedVersionError,
+} from './errors';
+import {
   type BaseEdgeData,
-  type Delta,
   type EntityId,
   type EntryInput,
   type LogEntry,
@@ -26,5 +17,27 @@ export {
   type Neighbor,
   type SerializedTemporalGraph,
   type SnapshotId,
+} from './temporal.types';
+import { TemporalGraph } from './temporal-graph';
+import type { Delta } from './utils';
+
+export {
+  type BaseEdgeData,
+  CursorNotAtHeadError,
+  type Delta,
+  type EntityId,
+  EntityNotFoundError,
+  type EntryInput,
+  type LogEntry,
+  type Mutation,
+  type MutationInput,
+  MutationKindEnum,
+  MutationOperationEnum,
+  type Neighbor,
+  SeekDirectionError,
+  type SerializedTemporalGraph,
+  type SnapshotId,
+  SnapshotOrderError,
   TemporalGraph,
+  UnsupportedVersionError,
 };

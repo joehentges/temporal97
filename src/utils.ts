@@ -1,3 +1,4 @@
+import { EntityNotFoundError } from './errors';
 import {
   type BaseEdgeData,
   type EntityId,
@@ -347,7 +348,7 @@ export function materializeMutation<TNode, TEdge extends BaseEdgeData>(
       };
     }
     if (prev === undefined) {
-      throw new Error(`Cannot delete node ${m.id}: not present at snapshot ${snapshot}.`);
+      throw new EntityNotFoundError('node', m.id, snapshot);
     }
     return {
       kind: MutationKindEnum.Node,
@@ -367,7 +368,7 @@ export function materializeMutation<TNode, TEdge extends BaseEdgeData>(
     };
   }
   if (prev === undefined) {
-    throw new Error(`Cannot delete edge ${m.id}: not present at snapshot ${snapshot}.`);
+    throw new EntityNotFoundError('edge', m.id, snapshot);
   }
   return {
     kind: MutationKindEnum.Edge,

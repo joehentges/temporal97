@@ -18,7 +18,7 @@ A single `Set` or `Delete` operation targeting one node or one edge. Mutations a
 { kind: "edge", op: "delete", id: "a->b" }
 ```
 
-The `kind` field is either `"node"` or `"edge"`. The `op` field is either `"set"` or `"delete"`. Both accept string literals or the exported enums `MutationKindEnum` and `MutationOperationEnum`.
+The `kind` field is either `"node"` or `"edge"`. The `op` field is either `"set"` or `"delete"`. Use string literals — the exported enums `MutationKindEnum` and `MutationOperationEnum` exist for compatibility but are not the preferred style.
 
 ## Entry
 
