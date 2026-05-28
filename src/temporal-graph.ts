@@ -99,29 +99,6 @@ export class TemporalGraph<
     return resolveNeighbors(this.adjacency, this.edgeState, id);
   }
 
-  /**
-   * Returns every neighbor of `id` as it existed at `snapshot`. Scans edge history in a single
-   * pass to find edges that were alive and connected to `id` at that point in time, returning
-   * the edge value and resolved neighbor ID for each.
-   *
-   * Use this when running traversal algorithms over a historical state of the graph rather than
-   * the current live state. Pair with {@link getNodeAt} to read node data at the same snapshot.
-   */
-  getNeighborsAt(id: EntityId, snapshot: SnapshotId): ReadonlyArray<Neighbor<TEdge>> {
-    const result: Neighbor<TEdge>[] = [];
-    for (const [edgeId, indices] of this.edgeHistory) {
-      const edge = this.getEdgeValueAt(edgeId, indices, snapshot);
-      if (edge !== undefined && (edge.source === id || edge.target === id)) {
-        result.push({
-          nodeId: edge.source === id ? edge.target : edge.source,
-          edgeId,
-          edge,
-        });
-      }
-    }
-    return result;
-  }
-
   // Returns an iterator over every neighbor that has an edge pointing into `id` at the current snapshot.
   inNeighbors(id: EntityId): IterableIterator<Neighbor<TEdge>> {
     return resolveInNeighbors(this.adjacency, this.edgeState, id);
@@ -211,28 +188,6 @@ export class TemporalGraph<
         result.add(edgeId);
       }
     }
-    return result;
-  }
-
-  // Returns all snapshots in the log, each paired with the entries recorded at that snapshot.
-  getSnapshots(): {
-    snapshot: SnapshotId;
-    entries: LogEntry<TNode, TEdge, TEvent>[];
-  }[] {
-    const result: {
-      snapshot: SnapshotId;
-      entries: LogEntry<TNode, TEdge, TEvent>[];
-    }[] = [];
-    let currentSnapshot: SnapshotId | undefined;
-
-    for (const entry of this.entries) {
-      if (entry.snapshot !== currentSnapshot) {
-        currentSnapshot = entry.snapshot;
-        result.push({ snapshot: currentSnapshot, entries: [] });
-      }
-      result[result.length - 1]?.entries.push(entry);
-    }
-
     return result;
   }
 
@@ -448,7 +403,7 @@ export class TemporalGraph<
    * Returns every log entry that mutated node `id` or referenced it via a connected edge.
    * Useful for auditing the full history of a node across all snapshots.
    */
-  getEntriesTouching(id: EntityId): LogEntry<TNode, TEdge, TEvent>[] {
+  getEntriesTouchingNode(id: EntityId): LogEntry<TNode, TEdge, TEvent>[] {
     const indices = this.nodeHistory.get(id);
     if (!indices) return [];
     const result: LogEntry<TNode, TEdge, TEvent>[] = [];

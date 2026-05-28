@@ -56,23 +56,23 @@ describe('getEntriesBetween()', () => {
   });
 });
 
-describe('getEntriesTouching()', () => {
+describe('getEntriesTouchingNode()', () => {
   it('returns entries that directly mutated the node', () => {
     const g = buildGraph();
-    const snaps = g.getEntriesTouching('alice').map((e) => e.snapshot);
+    const snaps = g.getEntriesTouchingNode('alice').map((e) => e.snapshot);
     expect(snaps).toContain(1);
     expect(snaps).toContain(3);
   });
 
   it('includes entries where the node appears as an edge source or target', () => {
     const g = buildGraph();
-    const snaps = g.getEntriesTouching('bob').map((e) => e.snapshot);
+    const snaps = g.getEntriesTouchingNode('bob').map((e) => e.snapshot);
     expect(snaps).toContain(1); // direct node set
     expect(snaps).toContain(2); // referenced as edge target
   });
 
   it('returns empty array for a node that was never touched', () => {
-    expect(buildGraph().getEntriesTouching('nobody')).toHaveLength(0);
+    expect(buildGraph().getEntriesTouchingNode('nobody')).toHaveLength(0);
   });
 });
 
@@ -117,19 +117,6 @@ describe('snapshot queries', () => {
     g.append({ snapshot: 1, mutations: [setUser('bob', BOB)] });
     g.append({ snapshot: 3, mutations: [setFollow('e1', 'alice', 'bob')] });
     expect(g.getSnapshotIds()).toEqual([1, 3]);
-  });
-
-  it('getSnapshots groups entries by snapshot with correct counts', () => {
-    const g = newGraph();
-    g.append({ snapshot: 1, mutations: [setUser('alice', ALICE)] });
-    g.append({ snapshot: 1, mutations: [setUser('bob', BOB)] });
-    g.append({ snapshot: 2, mutations: [setFollow('e1', 'alice', 'bob')] });
-    const snaps = g.getSnapshots();
-    expect(snaps).toHaveLength(2);
-    expect(snaps[0]?.snapshot).toBe(1);
-    expect(snaps[0]?.entries).toHaveLength(2);
-    expect(snaps[1]?.snapshot).toBe(2);
-    expect(snaps[1]?.entries).toHaveLength(1);
   });
 
   it('currentSnapshot is -Infinity on an empty graph', () => {

@@ -16,13 +16,11 @@ export enum MutationKindEnum {
   Node = 'node',
   Edge = 'edge',
 }
-export type MutationKind = keyof typeof MutationKindEnum;
 
 export enum MutationOperationEnum {
   Set = 'set',
   Delete = 'delete',
 }
-export type MutationOperation = keyof typeof MutationOperationEnum;
 
 export type NodeSetMutation<TNode> = {
   kind: MutationKindEnum.Node | 'node';

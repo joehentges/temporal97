@@ -1,15 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ALICE,
-  ALICE_V2,
-  BOB,
-  CAROL,
-  delFollow,
-  delUser,
-  newGraph,
-  setFollow,
-  setUser,
-} from './helpers';
+import { ALICE, ALICE_V2, BOB, delFollow, delUser, newGraph, setFollow, setUser } from './helpers';
 
 describe('getNodeAt()', () => {
   it('returns the node value at the snapshot it was created', () => {
@@ -101,54 +91,6 @@ describe('getEdgeAt()', () => {
 
   it('returns undefined for an unknown edge id', () => {
     expect(build().getEdgeAt('e999', 5)).toBeUndefined();
-  });
-});
-
-describe('getNeighborsAt()', () => {
-  it('returns neighbors via edges alive at the target snapshot', () => {
-    const g = newGraph();
-    g.append({
-      snapshot: 1,
-      mutations: [setUser('alice', ALICE), setUser('bob', BOB), setUser('carol', CAROL)],
-    });
-    g.append({ snapshot: 2, mutations: [setFollow('e1', 'alice', 'bob')] });
-    g.append({ snapshot: 3, mutations: [setFollow('e2', 'alice', 'carol')] });
-
-    expect(g.getNeighborsAt('alice', 2)).toHaveLength(1);
-    expect(g.getNeighborsAt('alice', 2)[0]?.nodeId).toBe('bob');
-    expect(g.getNeighborsAt('alice', 3)).toHaveLength(2);
-  });
-
-  it('excludes edges that were deleted before the target snapshot', () => {
-    const g = newGraph();
-    g.append({ snapshot: 1, mutations: [setUser('alice', ALICE), setUser('bob', BOB)] });
-    g.append({ snapshot: 2, mutations: [setFollow('e1', 'alice', 'bob')] });
-    g.append({ snapshot: 3, mutations: [delFollow('e1')] });
-    expect(g.getNeighborsAt('alice', 5)).toHaveLength(0);
-  });
-
-  it('returns correct neighbor shape — nodeId, edgeId, edge', () => {
-    const g = newGraph();
-    g.append({ snapshot: 1, mutations: [setUser('alice', ALICE), setUser('bob', BOB)] });
-    g.append({ snapshot: 2, mutations: [setFollow('e1', 'alice', 'bob', 99)] });
-    const [n] = g.getNeighborsAt('alice', 2);
-    expect(n?.nodeId).toBe('bob');
-    expect(n?.edgeId).toBe('e1');
-    expect(n?.edge.since).toBe(99);
-  });
-
-  it('returns empty array for a node with no connected edges at that snapshot', () => {
-    const g = newGraph();
-    g.append({ snapshot: 1, mutations: [setUser('alice', ALICE)] });
-    expect(g.getNeighborsAt('alice', 1)).toHaveLength(0);
-  });
-
-  it('works correctly even when the graph has been rewound past that snapshot', () => {
-    const g = newGraph();
-    g.append({ snapshot: 1, mutations: [setUser('alice', ALICE), setUser('bob', BOB)] });
-    g.append({ snapshot: 2, mutations: [setFollow('e1', 'alice', 'bob')] });
-    g.rewind(1);
-    expect(g.getNeighborsAt('alice', 2)).toHaveLength(1);
   });
 });
 
