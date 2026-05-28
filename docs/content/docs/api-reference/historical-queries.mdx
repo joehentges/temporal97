@@ -29,11 +29,3 @@ Returns the set of edge IDs connected to a node at the given snapshot.
 const edges = graph.getEdgesForNodeAt("a", 0); // ReadonlySet<EntityId>
 ```
 
-## getNeighborsAt(id, snapshot)
-
-Returns an array of `Neighbor` objects for all nodes adjacent to `id` at the given snapshot.
-
-```ts
-const neighbors = graph.getNeighborsAt("a", 0);
-// [{ nodeId: "b", edgeId: "a->b", edge: { ... } }]
-```
