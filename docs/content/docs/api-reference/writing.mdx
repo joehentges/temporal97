@@ -5,11 +5,9 @@ description: Add entries to the temporal log.
 
 ## append(input)
 
-Appends a single entry at the head of the log. Returns a `Delta` describing what changed.
+Appends a single entry to the log. Returns a `Delta` describing what changed.
 
-**Throws** if:
-- The cursor is not at the head of the log (i.e. you have rewound without re-advancing).
-- The snapshot would go backwards relative to the last entry.
+**Throws** if the cursor is not at the head of the log, or if the snapshot would go backwards.
 
 ```ts
 const delta = graph.append({
@@ -24,15 +22,26 @@ const delta = graph.append({
 
 ## ingest(inputs)
 
-Bulk-appends a pre-sorted array of entries. More efficient than repeated `append()` calls because it computes a single diff for the whole batch.
+Bulk-appends a pre-sorted array of entries. More efficient than repeated `append()` calls — it computes a single diff for the whole batch instead of one per entry.
 
 **Throws** if entries are not in ascending snapshot order.
 
 ```ts
 graph.ingest([
-  { snapshot: 10, mutations: [...] },
-  { snapshot: 20, mutations: [...] },
+  {
+    snapshot: 10,
+    mutations: [
+      { kind: "node", op: "set", id: "a", value: { label: "Alice" } },
+    ],
+  },
+  {
+    snapshot: 20,
+    mutations: [
+      { kind: "node", op: "set", id: "b", value: { label: "Bob" } },
+      { kind: "edge", op: "set", id: "a->b", value: { source: "a", target: "b" } },
+    ],
+  },
 ]);
 ```
 
-Use `ingest()` when loading historical data or replaying a stream of events — it avoids the overhead of computing intermediate deltas for each entry.
+Use `ingest()` when loading historical data or replaying a stream of events.

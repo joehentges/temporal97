@@ -3,11 +3,11 @@ title: Historical Queries
 description: Read the value of any node or edge at a past snapshot without moving the cursor.
 ---
 
-Historical query methods let you inspect arbitrary points in time without disturbing the cursor. The cursor stays where it is, and the live state is unchanged.
+Historical query methods let you inspect arbitrary points in time without moving the cursor. The live state is unaffected.
 
 ## getNodeAt(id, snapshot)
 
-Returns the node's value at the given snapshot, or `undefined` if it didn't exist.
+Returns the node's value at the given snapshot, or `undefined` if it didn't exist yet.
 
 ```ts
 const alice = graph.getNodeAt("a", 0); // { label: "Alice" }
@@ -29,3 +29,4 @@ Returns the set of edge IDs connected to a node at the given snapshot.
 const edges = graph.getEdgesForNodeAt("a", 0); // ReadonlySet<EntityId>
 ```
 
+**Performance note:** this method scans every edge's full history and can be slow on large graphs with many edge mutations. If you need to call it frequently, consider using `seekTo(snapshot)` and then `getEdgesForNode(id)` instead — see [Performance](/docs/performance#getedgesfornodelat-is-o-e--h_e) for details.

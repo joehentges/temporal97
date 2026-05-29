@@ -5,24 +5,22 @@ description: The five building blocks behind temporal97.
 
 ## Snapshot
 
-A `SnapshotId` is a plain `number` that acts as a logical timestamp. Multiple log entries can share the same snapshot — for example, a batch of mutations that all happen "at once" in your domain model.
-
-Snapshots are ordered but not required to be consecutive. You can use integers, Unix timestamps, sequence numbers, or any monotonically increasing values.
+A `SnapshotId` is a plain `number` used as a logical timestamp. Snapshots must always increase — you can use integers, Unix timestamps, or sequence numbers. Multiple entries can share the same snapshot, representing a batch of changes that happened "at the same time."
 
 ## Mutation
 
-A single `Set` or `Delete` operation targeting one node or one edge. Mutations are never applied in isolation — they are always grouped inside an **Entry**.
+A single `set` or `delete` operation targeting one node or one edge:
 
 ```ts
 { kind: "node", op: "set",    id: "a", value: { label: "Alice" } }
 { kind: "edge", op: "delete", id: "a->b" }
 ```
 
-The `kind` field is either `"node"` or `"edge"`. The `op` field is either `"set"` or `"delete"`. Use string literals — the exported enums `MutationKindEnum` and `MutationOperationEnum` exist for compatibility but are not the preferred style.
+Mutations are always grouped inside an **Entry** — they are never written to the log on their own.
 
 ## Entry
 
-An **Entry** is the unit written to the log. It bundles one snapshot ID, an optional typed event payload, and an array of mutations.
+The unit written to the log. An entry bundles a snapshot ID, an optional typed event payload, and an array of mutations:
 
 ```ts
 graph.append({
@@ -34,18 +32,18 @@ graph.append({
 });
 ```
 
-The generic type parameter `TEvent` on `TemporalGraph<TNode, TEdge, TEvent>` types these payloads.
+The generic type parameter `TEvent` on `TemporalGraph<TNode, TEdge, TEvent>` types the event payload.
 
 ## Cursor
 
-The **cursor** marks the graph's current live position in the log. Reading methods like `getNode()` and `liveNodes()` reflect the state at the cursor.
+The cursor marks the graph's current position in the log. Every read method (`getNode`, `liveNodes`, etc.) reflects the state at the cursor.
 
-- `append()` and `ingest()` require the cursor to be at the head of the log.
-- `advance()`, `rewind()`, and `seekTo()` move the cursor and update the live state.
+- Writing requires the cursor to be at the head of the log.
+- `advance()`, `rewind()`, and `seekTo()` move the cursor and update all live state.
 
 ## Delta
 
-Every write and every cursor movement returns a `Delta` — a description of what changed:
+Every write and every cursor movement returns a `Delta` — a plain description of what changed:
 
 ```ts
 interface Delta {
@@ -54,4 +52,4 @@ interface Delta {
 }
 ```
 
-Deltas are useful for driving incremental re-renders, computing diffs, or logging changes without re-scanning the entire graph.
+Use it to drive incremental re-renders or sync a downstream library without re-scanning the whole graph.

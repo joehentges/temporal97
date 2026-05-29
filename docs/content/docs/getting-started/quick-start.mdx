@@ -29,19 +29,17 @@ graph.append({
   ],
 });
 
-// Read current (snapshot 1) state
+// Read current state (snapshot 1)
 console.log(graph.getEdge("a->b")); // { source: "a", target: "b", weight: 5 }
 
-// Point-in-time read — no cursor movement required
+// Read past state without moving the cursor
 console.log(graph.getEdgeAt("a->b", 0)); // { source: "a", target: "b", weight: 1 }
 
-// Rewind the cursor to snapshot 0
+// Rewind to snapshot 0
 const delta = graph.rewind(0);
 console.log(delta.edges.updated); // Set { "a->b" }
 console.log(graph.getEdge("a->b")); // { source: "a", target: "b", weight: 1 }
 ```
-
-Use string literals (`"node"`, `"edge"`, `"set"`, `"delete"`) for `kind` and `op`. The enums `MutationKindEnum` and `MutationOperationEnum` are exported for compatibility but literals are preferred.
 
 ## Next steps
 

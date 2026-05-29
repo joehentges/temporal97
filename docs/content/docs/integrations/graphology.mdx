@@ -1,21 +1,21 @@
 ---
 title: Graphology
-description: Unlock graph algorithms on your temporal graph by keeping a Graphology instance in sync with temporal97.
+description: Run graph algorithms on your temporal graph by keeping a Graphology instance in sync with temporal97.
 ---
 
-[Graphology](https://graphology.github.io/) is a robust, multipurpose graph data structure for JavaScript/TypeScript. It ships with a rich standard library covering traversal (BFS/DFS), shortest paths, connected components, centrality measures, and more — none of which temporal97 provides.
+[Graphology](https://graphology.github.io/) is a graph data structure for JavaScript/TypeScript that ships with a standard library of algorithms: BFS/DFS traversal, shortest paths, connected components, centrality, and more — none of which temporal97 provides.
 
-The combination gives you the best of both: temporal97 owns the immutable history and time travel, Graphology owns the live structural queries and algorithms.
+The combination gives you the best of both: temporal97 owns the history and time travel, Graphology owns the algorithms.
 
 ## Installation
 
 ```bash
-npm install graphology graphology-traversal graphology-shortest-path
+npm install graphology graphology-traversal graphology-shortest-path graphology-components
 ```
 
 ## Syncing with Delta
 
-Every temporal97 operation returns a `Delta`. Write a helper that applies it to a Graphology instance:
+Write a helper that applies a Delta to a Graphology instance:
 
 ```ts
 import Graph from 'graphology';
@@ -36,7 +36,6 @@ function syncDelta(delta: Delta) {
     if (gly.hasEdge(id)) gly.dropEdge(id);
   }
 
-  // Additions
   for (const id of delta.nodes.added) {
     gly.addNode(id, temporal.getNode(id));
   }
@@ -45,7 +44,6 @@ function syncDelta(delta: Delta) {
     gly.addEdgeWithKey(id, e.source, e.target, e);
   }
 
-  // Updates
   for (const id of delta.nodes.updated) {
     gly.replaceNodeAttributes(id, temporal.getNode(id)!);
   }
@@ -55,7 +53,7 @@ function syncDelta(delta: Delta) {
 }
 ```
 
-Pass the returned Delta from any temporal97 operation straight into `syncDelta`:
+Pass the Delta from any temporal97 operation straight into `syncDelta`:
 
 ```ts
 syncDelta(temporal.append({
@@ -70,16 +68,18 @@ syncDelta(temporal.append({
 syncDelta(temporal.append({
   snapshot: 1,
   mutations: [
-    { kind: 'edge', op: 'set', id: 'alice->bob', value: { source: 'alice', target: 'bob', weight: 5 } },
+    { kind: 'node', op: 'set', id: 'charlie', value: { label: 'Charlie' } },
+    { kind: 'edge', op: 'set', id: 'bob->charlie', value: { source: 'bob', target: 'charlie', weight: 2 } },
   ],
 }));
 
-syncDelta(temporal.seekTo(0)); // rewind to snapshot 0 — Graphology mirrors the rollback
+// Rewind — Graphology mirrors the rollback
+syncDelta(temporal.rewind(0));
 ```
 
 ## Running algorithms
 
-Once Graphology is in sync you can run any algorithm from its standard library against the current temporal state.
+Once Graphology is in sync, run any algorithm from its standard library against the current temporal state.
 
 ### BFS traversal
 
@@ -106,23 +106,23 @@ const path = bidirectional(gly, 'alice', 'charlie');
 import connectedComponents from 'graphology-components';
 
 const components = connectedComponents(gly);
-// [['alice', 'bob'], ['charlie']]
+// [['alice', 'bob', 'charlie']]
 ```
 
-## Time-travel + algorithms
+## Time travel + algorithms
 
-Because `syncDelta` works for cursor movements too, you can run algorithms at any point in history without permanently changing the live state:
+Because `syncDelta` works for cursor movements too, you can run algorithms at any point in history:
 
 ```ts
-// Jump to snapshot 5, run an algorithm, jump back
-const forward = temporal.seekTo(5);
-syncDelta(forward);
+// Save where you are, then jump to a past snapshot
+const savedSnapshot = temporal.currentSnapshot;
 
-const path = bidirectional(gly, 'a', 'z');
-console.log('Path at snapshot 5:', path);
+syncDelta(temporal.seekTo(0));
+const path = bidirectional(gly, 'alice', 'bob');
+console.log('Path at snapshot 0:', path);
 
-const back = temporal.seekTo(temporal.currentSnapshot); // or seekTo(latestSnapshot)
-syncDelta(back);
+// Jump back to where you were
+syncDelta(temporal.seekTo(savedSnapshot));
 ```
 
-Or use temporal97's non-destructive historical queries to run a read-only check without moving the cursor at all — see [Historical Queries](/docs/api-reference/historical-queries).
+For read-only lookups that don't need Graphology, use temporal97's [historical queries](/docs/api-reference/historical-queries) instead — they don't move the cursor at all.

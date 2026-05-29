@@ -1,4 +1,4 @@
 {
   "title": "Integrations",
-  "pages": ["index", "graphology", "vis-network", "cytoscape", "d3-force"]
+  "pages": ["index", "graphology", "vis-network"]
 }
