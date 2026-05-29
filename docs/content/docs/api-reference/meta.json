@@ -2,6 +2,7 @@
   "title": "API Reference",
   "pages": [
     "index",
+    "entry-builder",
     "writing",
     "time-travel",
     "reading-state",

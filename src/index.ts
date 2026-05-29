@@ -1,3 +1,4 @@
+import { EntryBuilder } from './entry-builder';
 import {
   CursorNotAtHeadError,
   EntityNotFoundError,
@@ -27,6 +28,7 @@ export {
   type Delta,
   type EntityId,
   EntityNotFoundError,
+  EntryBuilder,
   type EntryInput,
   type LogEntry,
   type Mutation,
