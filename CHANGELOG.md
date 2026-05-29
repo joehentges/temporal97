@@ -1,5 +1,11 @@
 # temporal97
 
+## 0.1.2
+
+### Patch Changes
+
+- ae1041c: Add entry builer for constructing log entries
+
 ## 0.1.1
 
 ### Patch Changes
