@@ -3,9 +3,9 @@ title: Integrations
 description: Use temporal97 alongside popular graph and visualization libraries.
 ---
 
-temporal97 is purpose-built for one thing: recording mutation history and enabling time travel. It intentionally has no opinion on rendering, layout, or graph algorithms. That makes it a natural companion to the broader graph ecosystem.
+temporal97 does one thing: records mutation history and enables time travel. It has no opinion on rendering, layout, or graph algorithms — which makes it a natural companion to the rest of the graph ecosystem.
 
-The integration point is the **Delta** — returned by every write (`append`, `ingest`) and every cursor move (`seekTo`, `advance`, `rewind`). A Delta is a plain object describing exactly which node and edge IDs were added, updated, or removed:
+The integration point is the **Delta** — returned by every write and every cursor movement. It describes exactly what changed:
 
 ```ts
 interface Delta {
@@ -14,27 +14,17 @@ interface Delta {
 }
 ```
 
-Pipe that Delta into any library that supports incremental updates and you get a live, time-travel-aware view of your graph.
+Pass that Delta into any library that supports incremental updates and it mirrors the temporal state automatically.
 
 <Cards>
   <Card
     title="Graphology"
     href="/docs/integrations/graphology"
-    description="Unlock graph algorithms (BFS, shortest path, centrality) on your temporal graph."
+    description="Run graph algorithms (BFS, shortest path, centrality) against any point in your temporal history."
   />
   <Card
     title="vis-network"
     href="/docs/integrations/vis-network"
-    description="Render a live, physics-simulated network that animates as you travel through time."
-  />
-  <Card
-    title="Cytoscape.js"
-    href="/docs/integrations/cytoscape"
-    description="Interactive canvas/SVG visualization with rich selector queries and layout extensions."
-  />
-  <Card
-    title="d3-force"
-    href="/docs/integrations/d3-force"
-    description="Compute force-directed positions from temporal97 state for custom canvas or SVG rendering."
+    description="Render a live, physics-simulated network that updates automatically as you travel through time."
   />
 </Cards>
