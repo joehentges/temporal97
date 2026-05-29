@@ -1,6 +1,6 @@
 {
   "name": "temporal97",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A TypeScript temporal graph with snapshot-based time travel and mutation history tracking.",
   "keywords": [
     "temporal",
