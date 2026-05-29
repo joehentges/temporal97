@@ -1,0 +1,91 @@
+---
+title: Entry Builder
+description: A fluent builder for constructing log entries without mutation boilerplate.
+---
+
+`graph.entry(snapshot)` returns an `EntryBuilder` — a chainable helper for constructing entries without writing out the full mutation object by hand.
+
+```ts
+const delta = graph.entry(1)
+  .setNode("alice", { label: "Alice" })
+  .setNode("bob",   { label: "Bob" })
+  .setEdge("alice->bob", { source: "alice", target: "bob", weight: 1 })
+  .append();
+```
+
+This is equivalent to calling `graph.append()` directly with the same mutations. The builder is just a more readable way to express the same thing.
+
+## graph.entry(snapshot)
+
+Returns a new `EntryBuilder` scoped to `snapshot`. The builder's types are inferred automatically from the graph instance — no extra type annotations needed.
+
+## Methods
+
+### setNode(id, value)
+
+Adds a node-set mutation. Overwrites the node if it already exists.
+
+```ts
+graph.entry(2).setNode("alice", { label: "Alice K." }).append();
+```
+
+### deleteNode(id)
+
+Adds a node-delete mutation.
+
+```ts
+graph.entry(3).deleteNode("alice").append();
+```
+
+### setEdge(id, value)
+
+Adds an edge-set mutation. `value` must include `source` and `target`.
+
+```ts
+graph.entry(2)
+  .setEdge("alice->bob", { source: "alice", target: "bob", weight: 5 })
+  .append();
+```
+
+### deleteEdge(id)
+
+Adds an edge-delete mutation.
+
+```ts
+graph.entry(3).deleteEdge("alice->bob").append();
+```
+
+### event(payload)
+
+Attaches a typed event payload to the entry. Optional.
+
+```ts
+graph.entry(2)
+  .event({ type: "user-promoted", userId: "alice" })
+  .setNode("alice", { label: "Alice", role: "admin" })
+  .append();
+```
+
+## Terminal methods
+
+### append()
+
+Builds the entry and calls `graph.append()`. Returns the same `Delta` that `graph.append()` returns.
+
+```ts
+const delta = graph.entry(1).setNode("alice", { label: "Alice" }).append();
+// delta.nodes.added → Set { "alice" }
+```
+
+### build()
+
+Returns the raw `EntryInput` object without committing it. Useful when you want to construct entries ahead of time and pass them to `graph.ingest()`.
+
+```ts
+const entries = [
+  graph.entry(10).setNode("alice", { label: "Alice" }).build(),
+  graph.entry(20).setNode("bob",   { label: "Bob" }).build(),
+];
+
+graph.ingest(entries);
+```

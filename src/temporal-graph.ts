@@ -1,3 +1,4 @@
+import { EntryBuilder } from './entry-builder';
 import {
   CursorNotAtHeadError,
   SeekDirectionError,
@@ -246,6 +247,11 @@ export class TemporalGraph<
       edges: this.liveEdges(),
       events: this.getEventsAt(this.currentSnapshot),
     };
+  }
+
+  // Returns an EntryBuilder for creating a new entry at the specified snapshot.
+  entry(snapshot: SnapshotId): EntryBuilder<TNode, TEdge, TEvent> {
+    return new EntryBuilder(snapshot, (input) => this.append(input));
   }
 
   /**
